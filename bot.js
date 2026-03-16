@@ -1011,7 +1011,26 @@ bot.onText(/^\d{7}$/, async (msg) => {
 
 // ==================== Admin Notification ====================
 
+// 用于防止重复通知的缓存
+const notifiedAdmins = new Map();
+
 async function notifyAdminsFree(user, recharge, gameId) {
+    // 去重检查 - 防止同一申请多次通知
+    const notifyKey = `${recharge.id}_free`;
+    if (notifiedAdmins.has(notifyKey)) {
+        console.log(`[NOTIFY] Skip duplicate notification for ${notifyKey}`);
+        return;
+    }
+    notifiedAdmins.set(notifyKey, Date.now());
+    
+    // 清理过期缓存（1小时后删除）
+    const oneHourAgo = Date.now() - 3600000;
+    for (const [key, timestamp] of notifiedAdmins) {
+        if (timestamp < oneHourAgo) {
+            notifiedAdmins.delete(key);
+        }
+    }
+
     const adminMsg =
         `🎁 *New FREE Entry Pending Review!*\n\n` +
         `👤 User: ${user.telegramId}\n` +
@@ -1033,13 +1052,18 @@ async function notifyAdminsFree(user, recharge, gameId) {
         }
     };
 
-    if (CONFIG.ADMIN_IDS && CONFIG.ADMIN_IDS.length > 0) {
-        for (const adminId of CONFIG.ADMIN_IDS) {
+    // 去重管理员ID
+    const uniqueAdminIds = [...new Set(CONFIG.ADMIN_IDS)];
+    console.log(`[NOTIFY] Sending FREE notification to ${uniqueAdminIds.length} admins for user ${user.telegramId}`);
+
+    if (uniqueAdminIds && uniqueAdminIds.length > 0) {
+        for (const adminId of uniqueAdminIds) {
             try {
                 await bot.sendMessage(adminId, adminMsg, {
                     parse_mode: 'Markdown',
                     ...adminButtons
                 });
+                console.log(`[NOTIFY] Sent to admin ${adminId}`);
             } catch (e) {
                 console.error(`[ADMIN] Notify admin ${adminId} failed:`, e);
             }
@@ -1048,6 +1072,22 @@ async function notifyAdminsFree(user, recharge, gameId) {
 }
 
 async function notifyAdmins(user, recharge, photoFileId, gameId, expectedAmount = null) {
+    // 去重检查 - 防止同一申请多次通知
+    const notifyKey = `${recharge.id}_recharge`;
+    if (notifiedAdmins.has(notifyKey)) {
+        console.log(`[NOTIFY] Skip duplicate notification for ${notifyKey}`);
+        return;
+    }
+    notifiedAdmins.set(notifyKey, Date.now());
+    
+    // 清理过期缓存（1小时后删除）
+    const oneHourAgo = Date.now() - 3600000;
+    for (const [key, timestamp] of notifiedAdmins) {
+        if (timestamp < oneHourAgo) {
+            notifiedAdmins.delete(key);
+        }
+    }
+
     let expectedText = '';
     if (expectedAmount) {
         expectedText = `💡 Expected: ₹${expectedAmount.toLocaleString()}\n`;
@@ -1086,14 +1126,19 @@ async function notifyAdmins(user, recharge, photoFileId, gameId, expectedAmount 
         }
     };
 
-    if (CONFIG.ADMIN_IDS && CONFIG.ADMIN_IDS.length > 0) {
-        for (const adminId of CONFIG.ADMIN_IDS) {
+    // 去重管理员ID
+    const uniqueAdminIds = [...new Set(CONFIG.ADMIN_IDS)];
+    console.log(`[NOTIFY] Sending RECHARGE notification to ${uniqueAdminIds.length} admins for user ${user.telegramId}`);
+
+    if (uniqueAdminIds && uniqueAdminIds.length > 0) {
+        for (const adminId of uniqueAdminIds) {
             try {
                 await bot.sendPhoto(adminId, photoFileId, {
                     caption: adminMsg,
                     parse_mode: 'Markdown',
                     ...adminButtons
                 });
+                console.log(`[NOTIFY] Sent to admin ${adminId}`);
             } catch (e) {
                 console.error(`[ADMIN] Notify admin ${adminId} failed:`, e);
             }
