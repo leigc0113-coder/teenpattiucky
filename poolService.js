@@ -38,9 +38,18 @@ class PoolService {
             };
         }
 
-        // 统计当日充值
+        // 统计当日充值（处理时区问题）
         const recharges = await Database.findAll('recharges', { status: 'APPROVED' });
-        const dayRecharges = recharges.filter(r => r.createdAt.startsWith(calcDate));
+        
+        // 将 IST 日期转换为当天的 UTC 时间范围
+        // IST = UTC + 5:30，所以 IST 00:00 = UTC 前一天 18:30
+        const istDate = new Date(calcDate + 'T00:00:00+05:30');
+        const istDateNext = new Date(calcDate + 'T23:59:59+05:30');
+        
+        const dayRecharges = recharges.filter(r => {
+            const rechargeDate = new Date(r.createdAt);
+            return rechargeDate >= istDate && rechargeDate <= istDateNext;
+        });
 
         let regularRecharge = 0;  // 普通号码用户充值
         let tierRecharge = 0;     // 等级号码用户充值
@@ -121,17 +130,25 @@ class PoolService {
 
     /**
      * 获取参与人数
-     * @param {string} date - 日期
+     * @param {string} date - 日期 (IST格式 YYYY-MM-DD)
      * @returns {number} 参与人数
      */
     async getParticipantCount(date) {
-        const numbers = await Database.findAll('lotteryNumbers', {
-            date,
-            status: 'VALID'
+        // 将 IST 日期转换为当天的 UTC 时间范围
+        const istDate = new Date(date + 'T00:00:00+05:30');
+        const istDateNext = new Date(date + 'T23:59:59+05:30');
+        
+        const numbers = await Database.getAll('lotteryNumbers');
+        
+        // 过滤当天的号码（按创建时间）
+        const dayNumbers = numbers.filter(n => {
+            if (n.status !== 'VALID') return false;
+            const numDate = new Date(n.createdAt);
+            return numDate >= istDate && numDate <= istDateNext;
         });
         
         // 去重用户数
-        const userIds = new Set(numbers.map(n => n.userId));
+        const userIds = new Set(dayNumbers.map(n => n.userId));
         return userIds.size;
     }
 
@@ -140,7 +157,16 @@ class PoolService {
      * @returns {Object|null} 奖池对象
      */
     async getTodayPool() {
-        const today = new Date().toISOString().split('T')[0];
+        // 使用 IST 日期（与 calculateDailyPool 一致）
+        const istDate = new Date().toLocaleString('en-US', { 
+            timeZone: 'Asia/Kolkata',
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit'
+        });
+        // 格式转换: "03/17/2026" -> "2026-03-17"
+        const [month, day, year] = istDate.split('/');
+        const today = `${year}-${month}-${day}`;
         return await Database.findOne('pools', { date: today });
     }
 
