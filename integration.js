@@ -44,10 +44,15 @@ class ChannelGroupBotIntegration {
      */
     async isChannelMember(userId) {
         try {
+            console.log(`[DEBUG] Checking channel member: User ${userId} in ${this.channelId}`);
             const member = await this.bot.getChatMember(this.channelId, userId);
+            console.log(`[DEBUG] Channel member status: ${member.status}`);
             return ['member', 'administrator', 'creator'].includes(member.status);
         } catch (error) {
-            console.error('[CHECK_CHANNEL] Error:', error);
+            console.error(`[CHECK_CHANNEL_ERROR] User: ${userId}, Channel: ${this.channelId}`);
+            console.error(`[CHECK_CHANNEL_ERROR] Message: ${error.message}`);
+            console.error(`[CHECK_CHANNEL_ERROR] Code: ${error.code}`);
+            // 如果检查失败，返回 false 但不阻断流程
             return false;
         }
     }
