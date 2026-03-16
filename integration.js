@@ -39,6 +39,18 @@ class ChannelGroupBotIntegration {
         this.channelUsername = CONFIG.CHANNEL_USERNAME;
         this.groupId = CONFIG.GROUP_ID;
         this.groupUsername = CONFIG.GROUP_USERNAME;
+        this.botUsername = null; // 延迟加载
+    }
+    
+    /**
+     * 获取机器人用户名（带缓存）
+     */
+    async getBotUsername() {
+        if (!this.botUsername) {
+            const me = await this.bot.getMe();
+            this.botUsername = me.username;
+        }
+        return this.botUsername;
     }
 
     // =====================================================
@@ -76,25 +88,6 @@ class ChannelGroupBotIntegration {
         }
     }
 
-    /**
-     * 强制关注引导（可选）
-     * 如果不关注频道，无法使用完整功能
-     */
-    async requireChannelSubscription(userId, chatId) {
-        const isMember = await this.isChannelMember(userId);
-        
-        if (!isMember) {
-            await this.bot.sendMessage(chatId,
-                '⚠️ *Please subscribe to our channel first!*\n\n' +
-                '📢 Join: ' + this.channelId + '\n\n' +
-                'Then click /start again',
-                { parse_mode: 'Markdown' }
-            );
-            return false;
-        }
-        return true;
-    }
-
     // =====================================================
     // 2. 欢迎消息 - 引导关注所有平台（优化版）
     // =====================================================
@@ -102,6 +95,7 @@ class ChannelGroupBotIntegration {
     async sendWelcomeWithLinks(chatId, userId) {
         const isChannelMember = await this.isChannelMember(userId);
         const isGroupMember = await this.isGroupMember(userId);
+        const botUsername = await this.getBotUsername();
         
         // 获取今日奖池金额
         const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
@@ -146,7 +140,7 @@ class ChannelGroupBotIntegration {
         // 构建按钮（使用 @用户名 格式，不是数字ID）
         const inline_keyboard = [];
         
-        // 频道按钮 - 使用配置的 @用户名
+        // 频道按钮
         if (!isChannelMember) {
             inline_keyboard.push([{ 
                 text: '📢 Join Official Channel', 
@@ -154,7 +148,7 @@ class ChannelGroupBotIntegration {
             }]);
         }
         
-        // 群组按钮 - 使用配置的 @用户名
+        // 群组按钮
         if (!isGroupMember) {
             inline_keyboard.push([{ 
                 text: '💬 Join Player Group', 
@@ -182,6 +176,8 @@ class ChannelGroupBotIntegration {
      * 推送开奖结果到频道
      */
     async announceDrawResult(date, winners, poolAmount) {
+        const botUsername = await this.getBotUsername();
+        
         let msg = `🎉 *Lucky Draw Results - ${date}*\n\n`;
         msg += `💰 *Total Pool: ₹${poolAmount.toLocaleString()}*\n`;
         msg += `🏆 *${winners.length} Lucky Winners*\n\n`;
@@ -194,7 +190,7 @@ class ChannelGroupBotIntegration {
         });
         
         msg += `⏰ *Next Draw: Tonight 21:00 IST*\n\n`;
-        msg += `🎮 *Get your numbers: @YourBot*\n\n`;
+        msg += `🎮 *Get your numbers: @${botUsername}*\n\n`;
         msg += `#TeenPatti #LuckyDraw #WinCash`;
 
         // 发送到频道
@@ -213,12 +209,14 @@ class ChannelGroupBotIntegration {
      * 实时奖池更新
      */
     async updatePool(poolAmount, participantCount) {
+        const botUsername = await this.getBotUsername();
+        
         const msg = 
             `💰 *Pool Update*\n\n` +
             `Current Pool: *₹${poolAmount.toLocaleString()}*\n` +
             `Participants: *${participantCount}*\n` +
             `Draw: *Tonight 21:00 IST*\n\n` +
-            `🎮 Join now: @YourBot`;
+            `🎮 Join now: @${botUsername}`;
 
         await this.bot.sendMessage(this.channelId, msg, {
             parse_mode: 'Markdown'
@@ -229,10 +227,12 @@ class ChannelGroupBotIntegration {
      * 中奖者故事/喜报
      */
     async shareWinnerStory(winner) {
+        const botUsername = await this.getBotUsername();
+        
         const stories = [
             `🎉 *Big Win!*\n\n"I won ₹${winner.prize.toLocaleString()} yesterday! It was my 3rd day playing. The money came to my UPI in 2 hours. Totally legit!"\n\n- Game ID: ${winner.gameId}`,
             
-            `🏆 *Success Story*\n\n"Started with just FREE numbers, now I'm a VIP member. Won ₹${winner.prize.toLocaleString()} last week!"\n\nJoin us: @YourBot`,
+            `🏆 *Success Story*\n\n"Started with just FREE numbers, now I'm a VIP member. Won ₹${winner.prize.toLocaleString()} last week!"\n\nJoin us: @${botUsername}`,
             
             `💰 *Daily Winner*\n\nCongratulations to Game ID ${winner.gameId} for winning *₹${winner.prize.toLocaleString()}*!\n\nYou could be next! 🎰`
         ];
@@ -249,13 +249,15 @@ class ChannelGroupBotIntegration {
      * 推广活动公告
      */
     async announceEvent(eventTitle, eventDetails, duration) {
+        const botUsername = await this.getBotUsername();
+        
         const msg = 
             `🎁 *SPECIAL EVENT* 🎁\n\n` +
             `*${eventTitle}*\n\n` +
             `${eventDetails}\n\n` +
             `⏰ Duration: *${duration}*\n\n` +
-            `🎮 Participate: @YourBot\n` +
-            `💬 Discuss: ${this.groupId}`;
+            `🎮 Participate: @${botUsername}\n` +
+            `💬 Discuss: ${this.groupUsername}`;
 
         // 频道发送并置顶
         const eventMsg = await this.bot.sendMessage(this.channelId, msg, {
@@ -279,13 +281,16 @@ class ChannelGroupBotIntegration {
      * 群组欢迎消息（新成员加入）
      */
     async sendGroupWelcome(chatId, newMemberName) {
+        // 获取机器人用户名
+        const botUsername = await this.getBotUsername();
+        
         const msg = 
             `👋 Welcome *${newMemberName}* to Teen Patti Lucky Draw Community!\n\n` +
             `🎰 Get FREE lottery numbers daily\n` +
             `💰 Win real cash via UPI\n` +
             `🏆 Daily draw at 21:00 IST\n\n` +
-            `📢 Official: ${this.channelId}\n` +
-            `🎮 Start playing: @YourBot\n\n` +
+            `📢 Official: ${this.channelUsername}\n` +
+            `🎮 Start playing: @${botUsername}\n\n` +
             `💡 Ask questions here anytime!`;
 
         await this.bot.sendMessage(chatId, msg, {
@@ -297,6 +302,8 @@ class ChannelGroupBotIntegration {
      * 群组定时互动（活跃气氛）
      */
     async sendGroupEngagement(chatId) {
+        const botUsername = await this.getBotUsername();
+        
         const messages = [
             `💬 *Community Chat*\n\nWhat's your lucky number today? Share with us!`,
             
@@ -304,7 +311,7 @@ class ChannelGroupBotIntegration {
             
             `💡 *Tip of the Day*\n\nVIP members get 1.5x weight on ALL numbers! Upgrade by recharging ₹5,000 for 5 days.`,
             
-            `🎉 *Winners Celebration*\n\nYesterday's winners are enjoying their cash prizes! Will you be next? Join now: @YourBot`
+            `🎉 *Winners Celebration*\n\nYesterday's winners are enjoying their cash prizes! Will you be next? Join now: @${botUsername}`
         ];
 
         const msg = messages[Math.floor(Math.random() * messages.length)];
@@ -385,90 +392,7 @@ class ChannelGroupBotIntegration {
             `📢 *Important*\n\n${message}`, 
             { parse_mode: 'Markdown' }
         );
-
-        // 给所有活跃用户发私信（可选）
-        // await this.broadcastToAllUsers(message);
     }
 }
-
-// ==================== 自动定时任务 ====================
-
-/**
- * 设置定时推送任务
- */
-function setupScheduledPosts(bot, integration) {
-    const cron = require('node-cron');
-
-    // 每日 20:30 - 开奖前提醒（频道）
-    cron.schedule('30 20 * * *', async () => {
-        await bot.sendMessage(integration.channelId,
-            `⏰ *Draw Countdown: 30 Minutes*\n\n` +
-            `🎰 Get your lucky numbers now!\n` +
-            `💰 Tonight\'s pool is waiting for you!\n\n` +
-            `👉 @YourBot`,
-            { parse_mode: 'Markdown' }
-        );
-    }, { timezone: 'Asia/Kolkata' });
-
-    // 每日 09:00 - 早安推送（频道）
-    cron.schedule('0 9 * * *', async () => {
-        const today = new Date().toLocaleDateString('en-IN');
-        await bot.sendMessage(integration.channelId,
-            `☀️ *Good Morning!*\n\n` +
-            `📅 Today: ${today}\n` +
-            `🎰 New day, new chances to win!\n` +
-            `💰 Don\'t forget to check in for FREE numbers\n\n` +
-            `🎮 @YourBot`,
-            { parse_mode: 'Markdown' }
-        );
-    }, { timezone: 'Asia/Kolkata' });
-
-    // 每3小时 - 群组互动消息
-    cron.schedule('0 */3 * * *', async () => {
-        await integration.sendGroupEngagement(integration.groupId);
-    }, { timezone: 'Asia/Kolkata' });
-
-    // 每周五 18:00 - 周末活动预告
-    cron.schedule('0 18 * * 5', async () => {
-        await integration.announceEvent(
-            'WEEKEND SPECIAL',
-            '🎉 Double Prize Pool This Weekend!\n\n💰 Saturday & Sunday: ₹10,000 Pool\n🎁 Extra FREE numbers for all participants',
-            'Sat-Sun'
-        );
-    }, { timezone: 'Asia/Kolkata' });
-}
-
-// ==================== 使用示例 ====================
-
-/*
-// 在 bot.js 中初始化
-const ChannelGroupBotIntegration = require('./integration');
-const integration = new ChannelGroupBotIntegration(bot);
-
-// 1. 用户启动时检查订阅
-bot.onText(/\/start/, async (msg) => {
-    const userId = msg.from.id;
-    const chatId = msg.chat.id;
-    
-    // 可选：强制要求关注频道
-    // if (!await integration.requireChannelSubscription(userId, chatId)) return;
-    
-    // 发送带链接的欢迎消息
-    await integration.sendWelcomeWithLinks(chatId, userId);
-});
-
-// 2. 开奖后自动推送
-const result = await DrawService.drawWinners(today);
-await integration.announceDrawResult(today, result.winners, result.poolAmount);
-
-// 3. 新成员加入群组欢迎
-bot.on('new_chat_members', async (msg) => {
-    const newMember = msg.new_chat_member;
-    await integration.sendGroupWelcome(msg.chat.id, newMember.first_name);
-});
-
-// 4. 设置定时任务
-setupScheduledPosts(bot, integration);
-*/
 
 module.exports = ChannelGroupBotIntegration;
