@@ -1280,19 +1280,46 @@ async function processApproval(adminId, chatId, rechargeId, amount, messageId) {
         // 检查VIP资格
         await VIPService.processVIPCheck(recharge.userId, today);
 
-        // 处理邀请首充奖励
-        if (amount >= 100) {
-            const inviterId = await InviteService.getInviterId(recharge.userId);
-            if (inviterId) {
+        // 处理邀请奖励（注册奖励 + 首充奖励）
+        // 1. 注册奖励：被邀请人注册成功，邀请人获得 2 Silver
+        const inviterId = await InviteService.getInviterId(recharge.userId);
+        console.log(`[INVITE] Processing invite rewards for user ${recharge.userId}, inviterId=${inviterId}`);
+        
+        if (inviterId) {
+            const inviter = await Database.findById('users', inviterId);
+            console.log(`[INVITE] Found inviter:`, inviter ? `Yes (telegramId=${inviter.telegramId})` : 'No');
+            
+            // 检查是否已发放注册奖励
+            const inviteRecord = await Database.findOne('inviteRecords', { inviteeId: recharge.userId });
+            console.log(`[INVITE] Invite record found:`, inviteRecord ? `Yes (id=${inviteRecord.id})` : 'No');
+            
+            if (inviter && inviteRecord && !inviteRecord.registerRewardGiven) {
+                console.log(`[INVITE] Giving register reward to inviter ${inviterId}`);
+                const registerReward = await LotteryService.generateFreeNumbers(inviterId, 'invite_register', today, 2);
+                await Database.update('inviteRecords', inviteRecord.id, { registerRewardGiven: true });
+                await bot.sendMessage(
+                    inviter.telegramId,
+                    `🎉 *Your friend joined!*\n\n` +
+                    `You got 2 Silver bonus numbers:\n` +
+                    registerReward.map(n => `${n.emoji} *${n.number}*`).join('\n'),
+                    { parse_mode: 'Markdown' }
+                );
+            } else {
+                console.log(`[INVITE] Register reward already given or conditions not met`);
+            }
+            
+            // 2. 首充奖励：被邀请人首充≥₹100，邀请人获得 2 Gold
+            if (amount >= 100) {
+                console.log(`[INVITE] Processing recharge reward (amount >= 100)`);
                 await InviteService.processInviteRecharge(recharge.userId, amount);
-                const inviter = await Database.findById('users', inviterId);
                 if (inviter) {
-                    const inviteReward = await LotteryService.generateFreeNumbers(inviterId, 'invite_recharge', today, 2);
+                    console.log(`[INVITE] Giving recharge reward to inviter ${inviterId}`);
+                    const rechargeReward = await LotteryService.generateFreeNumbers(inviterId, 'invite_recharge', today, 2);
                     await bot.sendMessage(
                         inviter.telegramId,
                         `🎉 *Your friend recharged ₹${amount}!*\n\n` +
                         `You got 2 Gold bonus numbers:\n` +
-                        inviteReward.map(n => `${n.emoji} *${n.number}*`).join('\n'),
+                        rechargeReward.map(n => `${n.emoji} *${n.number}*`).join('\n'),
                         { parse_mode: 'Markdown' }
                     );
                 }
