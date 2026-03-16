@@ -65,18 +65,30 @@ function getTodayIST() {
 }
 
 function getNowIST() {
-    const now = new Date();
-    const istOffset = 5.5 * 60 * 60 * 1000;
-    const istTime = new Date(now.getTime() + istOffset);
-    return istTime;
-}
-
-function formatTimeIST(date) {
-    return date.toLocaleTimeString('en-IN', {
+    // 获取印度时区时间的各个部分
+    const istString = new Date().toLocaleString('en-US', { 
+        timeZone: 'Asia/Kolkata',
+        hour12: false,
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
         hour: '2-digit',
         minute: '2-digit',
-        timeZone: 'Asia/Kolkata'
+        second: '2-digit'
     });
+    return istString;
+}
+
+function formatTimeIST(dateStr) {
+    // 从 IST 时间字符串提取 HH:MM
+    // dateStr 格式: "03/17/2026, 05:56:30"
+    const match = dateStr.match(/(\d{1,2}):(\d{2}):\d{2}/);
+    if (match) {
+        const hour = match[1].padStart(2, '0');
+        const minute = match[2];
+        return `${hour}:${minute}`;
+    }
+    return dateStr;
 }
 
 function getDrawCountdown() {
