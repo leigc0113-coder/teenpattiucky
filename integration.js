@@ -1,0 +1,436 @@
+/**
+ * ============================================================
+ * Telegram 私域联动系统 (Channel-Group-Bot Integration)
+ * ============================================================
+ * 
+ * 架构设计：
+ * 频道(Channel) → 广播中心
+ * 群组(Group)   → 互动社区  
+ * 机器人(Bot)   → 核心入口 + 服务中枢
+ */
+
+const CONFIG = {
+    // Telegram ID配置
+    CHANNEL_ID: '@teenpatti_official',      // 官方频道
+    GROUP_ID: '@teenpatti_group',            // 玩家群组
+    ADMIN_GROUP_ID: '@teenpatti_admin',      // 管理员群组（可选）
+    
+    // 频道消息类型
+    CHANNEL_MESSAGES: {
+        DRAW_RESULT: 'draw_result',           // 开奖公告
+        POOL_UPDATE: 'pool_update',           // 奖池更新
+        WINNER_STORY: 'winner_story',         // 中奖故事
+        ANNOUNCEMENT: 'announcement',         // 重要公告
+        TUTORIAL: 'tutorial',                 // 教程攻略
+        EVENT: 'event'                        // 活动推广
+    }
+};
+
+// ==================== 核心联动服务 ====================
+
+class ChannelGroupBotIntegration {
+    constructor(bot) {
+        this.bot = bot;
+        this.channelId = CONFIG.CHANNEL_ID;
+        this.groupId = CONFIG.GROUP_ID;
+    }
+
+    // =====================================================
+    // 1. 机器人 → 引导用户关注频道 + 加入群组
+    // =====================================================
+    
+    /**
+     * 检查用户是否已关注频道
+     */
+    async isChannelMember(userId) {
+        try {
+            const member = await this.bot.getChatMember(this.channelId, userId);
+            return ['member', 'administrator', 'creator'].includes(member.status);
+        } catch (error) {
+            console.error('[CHECK_CHANNEL] Error:', error);
+            return false;
+        }
+    }
+
+    /**
+     * 检查用户是否已加入群组
+     */
+    async isGroupMember(userId) {
+        try {
+            const member = await this.bot.getChatMember(this.groupId, userId);
+            return ['member', 'administrator', 'creator'].includes(member.status);
+        } catch (error) {
+            console.error('[CHECK_GROUP] Error:', error);
+            return false;
+        }
+    }
+
+    /**
+     * 强制关注引导（可选）
+     * 如果不关注频道，无法使用完整功能
+     */
+    async requireChannelSubscription(userId, chatId) {
+        const isMember = await this.isChannelMember(userId);
+        
+        if (!isMember) {
+            await this.bot.sendMessage(chatId,
+                '⚠️ *Please subscribe to our channel first!*\n\n' +
+                '📢 Join: ' + this.channelId + '\n\n' +
+                'Then click /start again',
+                { parse_mode: 'Markdown' }
+            );
+            return false;
+        }
+        return true;
+    }
+
+    // =====================================================
+    // 2. 欢迎消息 - 引导关注所有平台
+    // =====================================================
+
+    async sendWelcomeWithLinks(chatId, userId) {
+        const isChannelMember = await this.isChannelMember(userId);
+        const isGroupMember = await this.isGroupMember(userId);
+        
+        let welcomeMsg = 
+            '🎰 *Welcome to Teen Patti Lucky Draw!*\n\n' +
+            '💰 Win real cash daily with FREE lottery numbers!\n\n' +
+            '📋 *Quick Links:*\n';
+        
+        // 动态显示未关注的链接
+        if (!isChannelMember) {
+            welcomeMsg += '🔔 Official Channel: ' + this.channelId + ' (Required)\n';
+        } else {
+            welcomeMsg += '✅ Official Channel: Joined\n';
+        }
+        
+        if (!isGroupMember) {
+            welcomeMsg += '💬 Player Group: ' + this.groupId + ' (Optional)\n';
+        } else {
+            welcomeMsg += '✅ Player Group: Joined\n';
+        }
+        
+        welcomeMsg += '\n🎮 Click "Join Now" to participate!';
+
+        // 创建带链接的按钮
+        const keyboard = {
+            inline_keyboard: [
+                [{ 
+                    text: '📢 Join Official Channel', 
+                    url: 'https://t.me/' + this.channelId.replace('@', '') 
+                }],
+                [{ 
+                    text: '💬 Join Player Group', 
+                    url: 'https://t.me/' + this.groupId.replace('@', '') 
+                }],
+                [{ 
+                    text: '🎮 Join Now', 
+                    callback_data: 'join_now' 
+                }]
+            ]
+        };
+
+        await this.bot.sendMessage(chatId, welcomeMsg, {
+            parse_mode: 'Markdown',
+            reply_markup: keyboard
+        });
+    }
+
+    // =====================================================
+    // 3. 频道 → 自动广播消息
+    // =====================================================
+
+    /**
+     * 推送开奖结果到频道
+     */
+    async announceDrawResult(date, winners, poolAmount) {
+        let msg = `🎉 *Lucky Draw Results - ${date}*\n\n`;
+        msg += `💰 *Total Pool: ₹${poolAmount.toLocaleString()}*\n`;
+        msg += `🏆 *${winners.length} Lucky Winners*\n\n`;
+        
+        winners.forEach((winner, index) => {
+            const emoji = index === 0 ? '🥇' : index <= 2 ? '🥈' : '🥉';
+            const prize = winner.prize.toLocaleString();
+            msg += `${emoji} *₹${prize}*\n`;
+            msg += `   Game ID: \`${winner.gameId}\`\n\n`;
+        });
+        
+        msg += `⏰ *Next Draw: Tonight 21:00 IST*\n\n`;
+        msg += `🎮 *Get your numbers: @YourBot*\n\n`;
+        msg += `#TeenPatti #LuckyDraw #WinCash`;
+
+        // 发送到频道
+        const channelMsg = await this.bot.sendMessage(this.channelId, msg, {
+            parse_mode: 'Markdown',
+            disable_web_page_preview: true
+        });
+
+        // 同时转发到群组（带频道来源）
+        await this.bot.forwardMessage(this.groupId, this.channelId, channelMsg.message_id);
+
+        return channelMsg;
+    }
+
+    /**
+     * 实时奖池更新
+     */
+    async updatePool(poolAmount, participantCount) {
+        const msg = 
+            `💰 *Pool Update*\n\n` +
+            `Current Pool: *₹${poolAmount.toLocaleString()}*\n` +
+            `Participants: *${participantCount}*\n` +
+            `Draw: *Tonight 21:00 IST*\n\n` +
+            `🎮 Join now: @YourBot`;
+
+        await this.bot.sendMessage(this.channelId, msg, {
+            parse_mode: 'Markdown'
+        });
+    }
+
+    /**
+     * 中奖者故事/喜报
+     */
+    async shareWinnerStory(winner) {
+        const stories = [
+            `🎉 *Big Win!*\n\n"I won ₹${winner.prize.toLocaleString()} yesterday! It was my 3rd day playing. The money came to my UPI in 2 hours. Totally legit!"\n\n- Game ID: ${winner.gameId}`,
+            
+            `🏆 *Success Story*\n\n"Started with just FREE numbers, now I'm a VIP member. Won ₹${winner.prize.toLocaleString()} last week!"\n\nJoin us: @YourBot`,
+            
+            `💰 *Daily Winner*\n\nCongratulations to Game ID ${winner.gameId} for winning *₹${winner.prize.toLocaleString()}*!\n\nYou could be next! 🎰`
+        ];
+
+        // 随机选择一个故事
+        const story = stories[Math.floor(Math.random() * stories.length)];
+        
+        await this.bot.sendMessage(this.channelId, story, {
+            parse_mode: 'Markdown'
+        });
+    }
+
+    /**
+     * 推广活动公告
+     */
+    async announceEvent(eventTitle, eventDetails, duration) {
+        const msg = 
+            `🎁 *SPECIAL EVENT* 🎁\n\n` +
+            `*${eventTitle}*\n\n` +
+            `${eventDetails}\n\n` +
+            `⏰ Duration: *${duration}*\n\n` +
+            `🎮 Participate: @YourBot\n` +
+            `💬 Discuss: ${this.groupId}`;
+
+        // 频道发送并置顶
+        const eventMsg = await this.bot.sendMessage(this.channelId, msg, {
+            parse_mode: 'Markdown'
+        });
+
+        // 置顶消息
+        await this.bot.pinChatMessage(this.channelId, eventMsg.message_id);
+
+        // 群组也发送
+        await this.bot.sendMessage(this.groupId, msg, {
+            parse_mode: 'Markdown'
+        });
+    }
+
+    // =====================================================
+    // 4. 群组 → 互动功能
+    // =====================================================
+
+    /**
+     * 群组欢迎消息（新成员加入）
+     */
+    async sendGroupWelcome(chatId, newMemberName) {
+        const msg = 
+            `👋 Welcome *${newMemberName}* to Teen Patti Lucky Draw Community!\n\n` +
+            `🎰 Get FREE lottery numbers daily\n` +
+            `💰 Win real cash via UPI\n` +
+            `🏆 Daily draw at 21:00 IST\n\n` +
+            `📢 Official: ${this.channelId}\n` +
+            `🎮 Start playing: @YourBot\n\n` +
+            `💡 Ask questions here anytime!`;
+
+        await this.bot.sendMessage(chatId, msg, {
+            parse_mode: 'Markdown'
+        });
+    }
+
+    /**
+     * 群组定时互动（活跃气氛）
+     */
+    async sendGroupEngagement(chatId) {
+        const messages = [
+            `💬 *Community Chat*\n\nWhat's your lucky number today? Share with us!`,
+            
+            `🎲 *Quick Poll*\n\nWhat tier are you aiming for?\nReply with: S (Silver) / G (Gold) / D (Diamond) / C (Crown)`,
+            
+            `💡 *Tip of the Day*\n\nVIP members get 1.5x weight on ALL numbers! Upgrade by recharging ₹5,000 for 5 days.`,
+            
+            `🎉 *Winners Celebration*\n\nYesterday's winners are enjoying their cash prizes! Will you be next? Join now: @YourBot`
+        ];
+
+        const msg = messages[Math.floor(Math.random() * messages.length)];
+        
+        await this.bot.sendMessage(chatId, msg, {
+            parse_mode: 'Markdown'
+        });
+    }
+
+    /**
+     * 群组红包/活动（使用 Bot API）
+     */
+    async sendGroupReward(chatId, rewardType) {
+        if (rewardType === 'checkin_bonus') {
+            const msg = 
+                `🎁 *Group Activity Bonus!*\n\n` +
+                `First 10 people to click the button get FREE Silver numbers!\n\n` +
+                `🏃 Hurry up!`;
+
+            const keyboard = {
+                inline_keyboard: [[
+                    { text: '🎁 Claim FREE Numbers', callback_data: 'claim_group_bonus' }
+                ]]
+            };
+
+            await this.bot.sendMessage(chatId, msg, {
+                parse_mode: 'Markdown',
+                reply_markup: keyboard
+            });
+        }
+    }
+
+    // =====================================================
+    // 5. 机器人 ↔ 频道/群组 数据互通
+    // =====================================================
+
+    /**
+     * 获取频道订阅人数
+     */
+    async getChannelStats() {
+        try {
+            const chat = await this.bot.getChat(this.channelId);
+            return {
+                title: chat.title,
+                members: chat.username ? 'public' : 'private'
+            };
+        } catch (error) {
+            console.error('[CHANNEL_STATS] Error:', error);
+            return null;
+        }
+    }
+
+    /**
+     * 获取群组人数
+     */
+    async getGroupStats() {
+        try {
+            const count = await this.bot.getChatMembersCount(this.groupId);
+            return { memberCount: count };
+        } catch (error) {
+            console.error('[GROUP_STATS] Error:', error);
+            return null;
+        }
+    }
+
+    /**
+     * 跨平台通知（重要事件）
+     */
+    async broadcastImportant(message) {
+        // 发送到频道
+        await this.bot.sendMessage(this.channelId, 
+            `📢 *Important Announcement*\n\n${message}`, 
+            { parse_mode: 'Markdown' }
+        );
+
+        // 发送到群组
+        await this.bot.sendMessage(this.groupId, 
+            `📢 *Important*\n\n${message}`, 
+            { parse_mode: 'Markdown' }
+        );
+
+        // 给所有活跃用户发私信（可选）
+        // await this.broadcastToAllUsers(message);
+    }
+}
+
+// ==================== 自动定时任务 ====================
+
+/**
+ * 设置定时推送任务
+ */
+function setupScheduledPosts(bot, integration) {
+    const cron = require('node-cron');
+
+    // 每日 20:30 - 开奖前提醒（频道）
+    cron.schedule('30 20 * * *', async () => {
+        await bot.sendMessage(integration.channelId,
+            `⏰ *Draw Countdown: 30 Minutes*\n\n` +
+            `🎰 Get your lucky numbers now!\n` +
+            `💰 Tonight\'s pool is waiting for you!\n\n` +
+            `👉 @YourBot`,
+            { parse_mode: 'Markdown' }
+        );
+    }, { timezone: 'Asia/Kolkata' });
+
+    // 每日 09:00 - 早安推送（频道）
+    cron.schedule('0 9 * * *', async () => {
+        const today = new Date().toLocaleDateString('en-IN');
+        await bot.sendMessage(integration.channelId,
+            `☀️ *Good Morning!*\n\n` +
+            `📅 Today: ${today}\n` +
+            `🎰 New day, new chances to win!\n` +
+            `💰 Don\'t forget to check in for FREE numbers\n\n` +
+            `🎮 @YourBot`,
+            { parse_mode: 'Markdown' }
+        );
+    }, { timezone: 'Asia/Kolkata' });
+
+    // 每3小时 - 群组互动消息
+    cron.schedule('0 */3 * * *', async () => {
+        await integration.sendGroupEngagement(integration.groupId);
+    }, { timezone: 'Asia/Kolkata' });
+
+    // 每周五 18:00 - 周末活动预告
+    cron.schedule('0 18 * * 5', async () => {
+        await integration.announceEvent(
+            'WEEKEND SPECIAL',
+            '🎉 Double Prize Pool This Weekend!\n\n💰 Saturday & Sunday: ₹10,000 Pool\n🎁 Extra FREE numbers for all participants',
+            'Sat-Sun'
+        );
+    }, { timezone: 'Asia/Kolkata' });
+}
+
+// ==================== 使用示例 ====================
+
+/*
+// 在 bot.js 中初始化
+const ChannelGroupBotIntegration = require('./integration');
+const integration = new ChannelGroupBotIntegration(bot);
+
+// 1. 用户启动时检查订阅
+bot.onText(/\/start/, async (msg) => {
+    const userId = msg.from.id;
+    const chatId = msg.chat.id;
+    
+    // 可选：强制要求关注频道
+    // if (!await integration.requireChannelSubscription(userId, chatId)) return;
+    
+    // 发送带链接的欢迎消息
+    await integration.sendWelcomeWithLinks(chatId, userId);
+});
+
+// 2. 开奖后自动推送
+const result = await DrawService.drawWinners(today);
+await integration.announceDrawResult(today, result.winners, result.poolAmount);
+
+// 3. 新成员加入群组欢迎
+bot.on('new_chat_members', async (msg) => {
+    const newMember = msg.new_chat_member;
+    await integration.sendGroupWelcome(msg.chat.id, newMember.first_name);
+});
+
+// 4. 设置定时任务
+setupScheduledPosts(bot, integration);
+*/
+
+module.exports = ChannelGroupBotIntegration;

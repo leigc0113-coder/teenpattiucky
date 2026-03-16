@@ -1,0 +1,14 @@
+[
+  {
+    "id": "pool_2026-03-15",
+    "date": "2026-03-15",
+    "baseAmount": 1000,
+    "regularContribution": 0,
+    "tierContribution": 500,
+    "bonus": 450,
+    "finalAmount": 1950,
+    "participantCount": 7,
+    "locked": false,
+    "createdAt": "2026-03-15T12:29:24.158Z"
+  }
+]

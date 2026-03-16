@@ -1,0 +1,76 @@
+[
+  {
+    "id": "rc_test_1773513934676_1773513934695",
+    "userId": "test_1773513934676",
+    "amount": 0,
+    "tier": null,
+    "screenshotUrl": "test_photo_id",
+    "status": "PENDING",
+    "createdAt": "2026-03-14T18:45:34.695Z"
+  },
+  {
+    "id": "rc_test_user_001_1773562743897",
+    "userId": "test_user_001",
+    "amount": 1000,
+    "expectedAmount": 1000,
+    "tier": "GOLD",
+    "screenshotUrl": "test_screenshot_id",
+    "status": "APPROVED",
+    "createdAt": "2026-03-15T08:19:03.897Z",
+    "reviewedAt": "2026-03-15T08:19:03.898Z",
+    "reviewerId": "admin_001",
+    "notes": null
+  },
+  {
+    "id": "rc_test_user_001_1773565824964",
+    "userId": "test_user_001",
+    "amount": 1000,
+    "expectedAmount": 1000,
+    "tier": "GOLD",
+    "screenshotUrl": "test_screenshot_id",
+    "status": "APPROVED",
+    "createdAt": "2026-03-15T09:10:24.964Z",
+    "reviewedAt": "2026-03-15T09:10:24.965Z",
+    "reviewerId": "admin_001",
+    "notes": null
+  },
+  {
+    "id": "rc_test_user_001_1773571375781",
+    "userId": "test_user_001",
+    "amount": 1000,
+    "expectedAmount": 1000,
+    "tier": "GOLD",
+    "screenshotUrl": "test_screenshot_id",
+    "status": "APPROVED",
+    "createdAt": "2026-03-15T10:42:55.781Z",
+    "reviewedAt": "2026-03-15T10:42:55.782Z",
+    "reviewerId": "admin_001",
+    "notes": null
+  },
+  {
+    "id": "rc_test_user_001_1773575036671",
+    "userId": "test_user_001",
+    "amount": 1000,
+    "expectedAmount": 1000,
+    "tier": "GOLD",
+    "screenshotUrl": "test_screenshot_id",
+    "status": "APPROVED",
+    "createdAt": "2026-03-15T11:43:56.671Z",
+    "reviewedAt": "2026-03-15T11:43:56.672Z",
+    "reviewerId": "admin_001",
+    "notes": null
+  },
+  {
+    "id": "rc_test_user_001_1773577764155",
+    "userId": "test_user_001",
+    "amount": 1000,
+    "expectedAmount": 1000,
+    "tier": "GOLD",
+    "screenshotUrl": "test_screenshot_id",
+    "status": "APPROVED",
+    "createdAt": "2026-03-15T12:29:24.155Z",
+    "reviewedAt": "2026-03-15T12:29:24.156Z",
+    "reviewerId": "admin_001",
+    "notes": null
+  }
+]

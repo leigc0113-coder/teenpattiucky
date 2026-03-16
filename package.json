@@ -1,0 +1,32 @@
+{
+  "name": "teenpatti-lucky-bot",
+  "version": "1.1.0",
+  "description": "游戏号码抽奖平台 - Telegram Bot (Fixed & Enhanced)",
+  "main": "bot.js",
+  "scripts": {
+    "start": "node bot.js",
+    "dev": "nodemon bot.js",
+    "cron:vip": "node cronJobs.js vip",
+    "cron:pool": "node cronJobs.js pool",
+    "cron:draw": "node cronJobs.js draw",
+    "cron:cooling": "node cronJobs.js cooling",
+    "cron:reset-vip": "node cronJobs.js reset-vip",
+    "test": "node test.js"
+  },
+  "keywords": [
+    "telegram",
+    "bot",
+    "lottery",
+    "game",
+    "teenpatti"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "node-telegram-bot-api": "^0.64.0",
+    "dotenv": "^16.4.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.0"
+  }
+}

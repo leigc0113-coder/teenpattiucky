@@ -1,0 +1,102 @@
+[
+  {
+    "id": "青铜·01",
+    "level": 1,
+    "tierName": "青铜",
+    "number": "01",
+    "status": "COOLING",
+    "userId": null,
+    "assignedAt": "2026-03-14T18:45:34.680Z",
+    "coolingEndDate": "2026-03-21"
+  },
+  {
+    "id": "青铜·02",
+    "level": 2,
+    "tierName": "青铜",
+    "number": "02",
+    "status": "OCCUPIED",
+    "userId": "test_1773513934676",
+    "assignedAt": "2026-03-14T18:45:34.697Z",
+    "coolingEndDate": null
+  },
+  {
+    "id": "白银·01",
+    "level": 3,
+    "tierName": "白银",
+    "number": "01",
+    "status": "OCCUPIED",
+    "userId": "test_user_001",
+    "assignedAt": "2026-03-15T08:19:03.887Z",
+    "coolingEndDate": null
+  },
+  {
+    "id": "白银·02",
+    "level": 4,
+    "tierName": "白银",
+    "number": "02",
+    "status": "OCCUPIED",
+    "userId": "test_user_001",
+    "assignedAt": "2026-03-15T09:10:24.953Z",
+    "coolingEndDate": null
+  },
+  {
+    "id": "黄金·01",
+    "level": 5,
+    "tierName": "黄金",
+    "number": "01",
+    "status": "OCCUPIED",
+    "userId": "test_user_001",
+    "assignedAt": "2026-03-15T10:42:55.770Z",
+    "coolingEndDate": null
+  },
+  {
+    "id": "黄金·02",
+    "level": 6,
+    "tierName": "黄金",
+    "number": "02",
+    "status": "OCCUPIED",
+    "userId": "test_user_001",
+    "assignedAt": "2026-03-15T11:43:56.658Z",
+    "coolingEndDate": null
+  },
+  {
+    "id": "铂金·01",
+    "level": 7,
+    "tierName": "铂金",
+    "number": "01",
+    "status": "OCCUPIED",
+    "userId": "test_user_001",
+    "assignedAt": "2026-03-15T12:29:24.143Z",
+    "coolingEndDate": null
+  },
+  {
+    "id": "铂金·02",
+    "level": 8,
+    "tierName": "铂金",
+    "number": "02",
+    "status": "OCCUPIED",
+    "userId": "test_user_001",
+    "assignedAt": "2026-03-16T05:29:15.201Z",
+    "coolingEndDate": null
+  },
+  {
+    "id": "钻石·01",
+    "level": 9,
+    "tierName": "钻石",
+    "number": "01",
+    "status": "OCCUPIED",
+    "userId": "test_user_001",
+    "assignedAt": "2026-03-16T06:38:55.172Z",
+    "coolingEndDate": null
+  },
+  {
+    "id": "星耀·01",
+    "level": 10,
+    "tierName": "星耀",
+    "number": "01",
+    "status": "OCCUPIED",
+    "userId": "test_user_001",
+    "assignedAt": "2026-03-16T07:10:25.865Z",
+    "coolingEndDate": null
+  }
+]

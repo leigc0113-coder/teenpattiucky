@@ -1,0 +1,118 @@
+[
+  {
+    "id": "test_1773512389370",
+    "telegramId": 123456,
+    "gameId": "1234567",
+    "username": "test_user"
+  },
+  {
+    "id": "u_999999999",
+    "telegramId": 999999999,
+    "gameId": "7654321",
+    "nickname": "test_user",
+    "playerType": "NEW",
+    "riskLevel": 0,
+    "createdAt": "2026-03-14T18:45:34.676Z",
+    "lastActive": "2026-03-14T18:45:34.677Z"
+  },
+  {
+    "id": "u_123456789",
+    "telegramId": 123456789,
+    "gameId": "7654321",
+    "nickname": "TestUser",
+    "playerType": "NEW",
+    "riskLevel": 0,
+    "createdAt": "2026-03-15T08:19:03.884Z",
+    "lastActive": "2026-03-15T08:19:03.884Z"
+  },
+  {
+    "id": "u_123456789",
+    "telegramId": 123456789,
+    "gameId": "7654321",
+    "nickname": "TestUser",
+    "playerType": "NEW",
+    "riskLevel": 0,
+    "createdAt": "2026-03-15T09:10:24.951Z",
+    "lastActive": "2026-03-15T09:10:24.951Z"
+  },
+  {
+    "id": "u_123456789",
+    "telegramId": 123456789,
+    "gameId": "7654321",
+    "nickname": "TestUser",
+    "playerType": "NEW",
+    "riskLevel": 0,
+    "createdAt": "2026-03-15T10:42:55.767Z",
+    "lastActive": "2026-03-15T10:42:55.768Z"
+  },
+  {
+    "id": "u_123456789",
+    "telegramId": 123456789,
+    "gameId": "7654321",
+    "nickname": "TestUser",
+    "playerType": "NEW",
+    "riskLevel": 0,
+    "createdAt": "2026-03-15T11:43:56.655Z",
+    "lastActive": "2026-03-15T11:43:56.656Z"
+  },
+  {
+    "id": "u_123456789",
+    "telegramId": 123456789,
+    "gameId": "7654321",
+    "nickname": "TestUser",
+    "playerType": "NEW",
+    "riskLevel": 0,
+    "createdAt": "2026-03-15T12:29:24.139Z",
+    "lastActive": "2026-03-15T12:29:24.140Z"
+  },
+  {
+    "id": "u_123456789",
+    "telegramId": 123456789,
+    "gameId": "7654321",
+    "nickname": "TestUser",
+    "playerType": "NEW",
+    "riskLevel": 0,
+    "createdAt": "2026-03-16T05:29:15.198Z",
+    "lastActive": "2026-03-16T05:29:15.199Z"
+  },
+  {
+    "id": "u_123456789",
+    "telegramId": 123456789,
+    "gameId": "7654321",
+    "nickname": "TestUser",
+    "playerType": "NEW",
+    "riskLevel": 0,
+    "createdAt": "2026-03-16T06:38:55.168Z",
+    "lastActive": "2026-03-16T06:38:55.169Z"
+  },
+  {
+    "id": "u_123456789",
+    "telegramId": 123456789,
+    "gameId": "7654321",
+    "nickname": "TestUser",
+    "playerType": "NEW",
+    "riskLevel": 0,
+    "createdAt": "2026-03-16T07:10:25.862Z",
+    "lastActive": "2026-03-16T07:10:25.862Z"
+  },
+  {
+    "id": "u_123456789",
+    "telegramId": 123456789,
+    "gameId": "7654321",
+    "nickname": "TestUser",
+    "playerType": "NEW",
+    "riskLevel": 0,
+    "createdAt": "2026-03-16T10:49:28.785Z",
+    "lastActive": "2026-03-16T10:49:28.786Z"
+  },
+  {
+    "id": "u_123456789",
+    "telegramId": 123456789,
+    "gameId": "7654321",
+    "nickname": "TestUser",
+    "playerType": "NEW",
+    "riskLevel": 0,
+    "createdAt": "2026-03-16T13:48:42.699Z",
+    "lastActive": "2026-03-16T13:48:42.699Z"
+  }
+]
