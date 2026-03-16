@@ -173,9 +173,6 @@ class ChannelGroupBotIntegration {
             reply_markup: { inline_keyboard }
         });
     }
-            reply_markup: keyboard
-        });
-    }
 
     // =====================================================
     // 3. 频道 → 自动广播消息
