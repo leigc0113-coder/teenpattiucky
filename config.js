@@ -23,13 +23,13 @@ module.exports = {
      * 官方频道ID（用于广播消息）
      * 格式：@channelname 或 -100xxxxxxxxx
      */
-    CHANNEL_ID: process.env.CHANNEL_ID || '@telltest222',
+    CHANNEL_ID: process.env.CHANNEL_ID,
     
     /**
      * 玩家群组ID（用于社群互动）
      * 格式：@groupname 或 -100xxxxxxxxx
      */
-    GROUP_ID: process.env.GROUP_ID || '@tkgfg',
+    GROUP_ID: process.env.GROUP_ID,
     
     /**
      * 是否强制要求关注频道
