@@ -66,10 +66,16 @@ console.log('🤖 Bot Starting...');
 // ==================== Helper Functions ====================
 
 function getTodayIST() {
-    const now = new Date();
-    const istOffset = 5.5 * 60 * 60 * 1000;
-    const istTime = new Date(now.getTime() + istOffset);
-    return istTime.toISOString().split('T')[0];
+    // 使用与 PoolService 相同的 IST 日期计算方法
+    const istString = new Date().toLocaleString('en-US', {
+        timeZone: 'Asia/Kolkata',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+    });
+    // 格式转换: "03/17/2026" -> "2026-03-17"
+    const [month, day, year] = istString.split('/');
+    return `${year}-${month}-${day}`;
 }
 
 function getNowIST() {
