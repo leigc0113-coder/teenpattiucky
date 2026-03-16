@@ -182,32 +182,37 @@ bot.onText(/\/start(?:\s+(.+))?/, async (msg, match) => {
         
         // Check if channel subscription is required
         if (CONFIG.REQUIRE_CHANNEL_SUBSCRIPTION) {
-            const isMember = await integration.isChannelMember(userId);
-            if (!isMember) {
-                await bot.sendMessage(chatId,
-                    '🎰 *Welcome to Teen Patti Lucky Draw!*\n\n' +
-                    '💰 Win real cash daily with FREE lottery numbers!\n\n' +
-                    '⚠️ *Please join our official channel first:*\n\n' +
-                    '📢 Official Channel: ' + CONFIG.CHANNEL_ID + '\n' +
-                    '💬 Player Group: ' + CONFIG.GROUP_ID + '\n\n' +
-                    '👆 Click the links above to join, then click /start again',
-                    { 
-                        parse_mode: 'Markdown',
-                        reply_markup: {
-                            inline_keyboard: [
-                                [{ 
-                                    text: '📢 Join Official Channel', 
-                                    url: 'https://t.me/' + CONFIG.CHANNEL_ID.replace('@', '') 
-                                }],
-                                [{ 
-                                    text: '💬 Join Player Group', 
-                                    url: 'https://t.me/' + CONFIG.GROUP_ID.replace('@', '') 
-                                }]
-                            ]
+            try {
+                const isMember = await integration.isChannelMember(userId);
+                if (!isMember) {
+                    await bot.sendMessage(chatId,
+                        '🎰 *Welcome to Teen Patti Lucky Draw!*\n\n' +
+                        '💰 Win real cash daily with FREE lottery numbers!\n\n' +
+                        '⚠️ *Please join our official channel first:*\n\n' +
+                        '📢 Official Channel: ' + CONFIG.CHANNEL_ID + '\n' +
+                        '💬 Player Group: ' + CONFIG.GROUP_ID + '\n\n' +
+                        '👆 Click the links above to join, then click /start again',
+                        { 
+                            parse_mode: 'Markdown',
+                            reply_markup: {
+                                inline_keyboard: [
+                                    [{ 
+                                        text: '📢 Join Official Channel', 
+                                        url: 'https://t.me/' + CONFIG.CHANNEL_ID.replace('@', '') 
+                                    }],
+                                    [{ 
+                                        text: '💬 Join Player Group', 
+                                        url: 'https://t.me/' + CONFIG.GROUP_ID.replace('@', '') 
+                                    }]
+                                ]
+                            }
                         }
-                    }
-                );
-                return;
+                    );
+                    return;
+                }
+            } catch (error) {
+                console.error('[CHECK_CHANNEL] Error:', error.message);
+                // 如果检查失败，继续执行（不阻断用户）
             }
         }
         
