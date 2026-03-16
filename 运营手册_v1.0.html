@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TeenPatti Lucky Bot 运营手册</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 210mm;
+            margin: 0 auto;
+            padding: 20mm;
+            background: white;
+        }
+        .header {
+            text-align: center;
+            padding: 30px 0;
+            border-bottom: 3px solid #FFD700;
+            margin-bottom: 30px;
+        }
+        .header h1 {
+            font-size: 32px;
+            color: #1a1a1a;
+            margin-bottom: 10px;
+        }
+        .header .subtitle {
+            font-size: 18px;
+            color: #666;
+        }
+        .header .version {
+            display: inline-block;
+            background: #FFD700;
+            color: #000;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+        h2 {
+            font-size: 24px;
+            color: #1a1a1a;
+            margin: 30px 0 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #eee;
+        }
+        h3 {
+            font-size: 20px;
+            color: #333;
+            margin: 25px 0 10px;
+        }
+        h4 {
+            font-size: 16px;
+            color: #555;
+            margin: 20px 0 10px;
+        }
+        p {
+            margin-bottom: 12px;
+            text-align: justify;
+        }
+        .flow-chart {
+            background: #f8f9fa;
+            border-left: 4px solid #FFD700;
+            padding: 20px;
+            margin: 20px 0;
+            font-family: monospace;
+            font-size: 14px;
+            line-height: 2;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-size: 14px;
+        }
+        th {
+            background: #1a1a1a;
+            color: #FFD700;
+            padding: 12px;
+            text-align: left;
+            font-weight: bold;
+        }
+        td {
+            padding: 10px 12px;
+            border-bottom: 1px solid #eee;
+        }
+        tr:nth-child(even) {
+            background: #f8f9fa;
+        }
+        .highlight {
+            background: #FFF9E6;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            border-left: 4px solid #FFD700;
+        }
+        .code-block {
+            background: #1a1a1a;
+            color: #00ff00;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 13px;
+            overflow-x: auto;
+            margin: 15px 0;
+        }
+        .emoji {
+            font-size: 1.2em;
+        }
+        .step {
+            display: flex;
+            align-items: flex-start;
+            margin: 15px 0;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        .step-number {
+            width: 30px;
+            height: 30px;
+            background: #FFD700;
+            color: #000;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin-right: 15px;
+            flex-shrink: 0;
+        }
+        .step-content {
+            flex: 1;
+        }
+        .checklist {
+            list-style: none;
+        }
+        .checklist li {
+            padding: 8px 0;
+            padding-left: 30px;
+            position: relative;
+        }
+        .checklist li:before {
+            content: "☐";
+            position: absolute;
+            left: 0;
+            color: #FFD700;
+            font-weight: bold;
+        }
+        ul, ol {
+            margin: 15px 0;
+            padding-left: 25px;
+        }
+        li {
+            margin: 8px 0;
+        }
+        .footer {
+            margin-top: 50px;
+            padding-top: 20px;
+            border-top: 2px solid #eee;
+            text-align: center;
+            color: #666;
+            font-size: 14px;
+        }
+        @media print {
+            body {
+                padding: 10mm;
+            }
+            .no-print {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🎰 TeenPatti Lucky Bot</h1>
+        <div class="subtitle">运营手册 - 项目完整流程与功能详解</div>
+        <div class="version">版本 v1.2.0 | 2026-03-16</div>
+    </div>
+
+    <h2>📋 目录</h2>
+    <ol>
+        <li>项目概述</li>
+        <li>用户参与流程</li>
+        <li>管理员操作流程</li>
+        <li>功能模块详解</li>
+        <li>号码等级系统</li>
+        <li>VIP系统</li>
+        <li>邀请裂变系统</li>
+        <li>开奖机制</li>
+        <li>运营配置指南</li>
+        <li>常见问题处理</li>
+    </ol>
+
+    <h2>1. 项目概述</h2>
+    
+    <h3>1.1 项目简介</h3>
+    <p>TeenPatti Lucky Bot 是一个基于 Telegram 的号码抽奖平台，用户通过参与 Teen Patti Master 游戏获得抽奖号码，每日 21:00 IST（印度时间）开奖，赢取现金奖励。</p>
+    
+    <div class="highlight">
+        <strong>核心优势：</strong>
+        <ul>
+            <li>每日自动开奖，公平透明</li>
+            <li>10个稀缺等级，提升用户粘性</li>
+            <li>VIP特权系统，高价值用户留存</li>
+            <li>邀请裂变机制，自然增长</li>
+        </ul>
+    </div>
+
+    <h3>1.2 技术架构</h3>
+    <table>
+        <tr>
+            <th>组件</th>
+            <th>技术</th>
+        </tr>
+        <tr>
+            <td>前端界面</td>
+            <td>Telegram Bot API</td>
+        </tr>
+        <tr>
+            <td>后端服务</td>
+            <td>Node.js + Express</td>
+        </tr>
+        <tr>
+            <td>数据库</td>
+            <td>JSON 文件存储（LowDB）</td>
+        </tr>
+        <tr>
+            <td>部署平台</td>
+            <td>Railway（自动部署）</td>
+        </tr>
+        <tr>
+            <td>时区</td>
+            <td>Asia/Kolkata（印度时间）</td>
+        </tr>
+    </table>
+
+    <h2>2. 用户参与流程</h2>
+    
+    <h3>2.1 完整流程图</h3>
+    <div class="flow-chart">
+用户点击 /start
+    ↓
+显示欢迎信息 + 今日奖池
+    ↓
+点击 "🎮 Join Now"
+    ↓
+输入 Game ID（7位数字）
+    ↓
+发送截图（游戏ID截图或充值截图）
+    ↓
+系统提交审核
+    ↓
+管理员审核
+    ↓
+审核通过 → 发放号码
+    ↓
+等待 21:00 IST 开奖
+    ↓
+中奖者自动收到通知
+    </div>
+
+    <h3>2.2 详细步骤</h3>
+    
+    <div class="step">
+        <div class="step-number">1</div>
+        <div class="step-content">
+            <strong>启动机器人</strong>
+            <p>用户搜索 Bot 并点击 /start，显示欢迎信息：</p>
+            <ul>
+                <li>今日奖池金额（工作日 ₹2,000，周末 ₹5,000）</li>
+                <li>开奖时间：每日 21:00 IST</li>
+                <li>三个按钮：Join Now / Rules / Support</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="step">
+        <div class="step-number">2</div>
+        <div class="step-content">
+            <strong>输入 Game ID</strong>
+            <p>点击 "🎮 Join Now" 后，提示输入 7 位数字的 Game ID</p>
+            <p>系统检查：是否为 7 位数字、是否已被注册</p>
+        </div>
+    </div>
+
+    <div class="step">
+        <div class="step-number">3</div>
+        <div class="step-content">
+            <strong>发送截图</strong>
+            <p>成功输入 Game ID 后，提示发送截图：</p>
+            <ul>
+                <li>游戏个人资料截图 或</li>
+                <li>充值成功截图</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="step">
+        <div class="step-number">4</div>
+        <div class="step-content">
+            <strong>管理员审核</strong>
+            <p>管理员收到审核通知，查看截图和 Game ID，选择：</p>
+            <ul>
+                <li>✅ 批准：选择充值金额档位</li>
+                <li>❌ 拒绝：填写拒绝原因</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="step">
+        <div class="step-number">5</div>
+        <div class="step-content">
+            <strong>等待开奖</strong>
+            <p>每日 21:00 IST 自动开奖，中奖者自动收到通知，奖金通过 UPI 发放。</p>
+        </div>
+    </div>
+
+    <h2>3. 管理员操作流程</h2>
+    
+    <h3>3.1 审核通知示例</h3>
+    <div class="code-block">
+🔔 New Recharge Pending Review!
+
+👤 User: 123456789
+🎮 Game ID: 7654321
+🆔 Ref: abc12345
+
+💰 Select Amount to Approve:
+[₹100] [₹300] [₹500]
+[₹1000] [₹2000] [₹5000]
+[₹10000] [₹20000]
+[❌ Reject]
+    </div>
+
+    <h3>3.2 管理员命令</h3>
+    <p>发送 <code>/admin</code> 查看管理员面板：</p>
+    <ul>
+        <li>📊 今日统计</li>
+        <li>👥 用户管理</li>
+        <li>🔔 待审核列表</li>
+        <li>🎁 手动发号</li>
+        <li>📈 数据导出</li>
+    </ul>
+
+    <h2>4. 号码等级系统</h2>
+    
+    <table>
+        <tr>
+            <th>等级</th>
+            <th>权重范围</th>
+            <th>充值要求</th>
+        </tr>
+        <tr>
+            <td>🥉 青铜</td>
+            <td>1x</td>
+            <td>免费</td>
+        </tr>
+        <tr>
+            <td>🥈 白银</td>
+            <td>1-2x</td>
+            <td>₹100+</td>
+        </tr>
+        <tr>
+            <td>🥇 黄金</td>
+            <td>2-4x</td>
+            <td>₹300+</td>
+        </tr>
+        <tr>
+            <td>💎 铂金</td>
+            <td>4-6x</td>
+            <td>₹500+</td>
+        </tr>
+        <tr>
+            <td>👑 钻石</td>
+            <td>6-9x</td>
+            <td>₹1000+</td>
+        </tr>
+        <tr>
+            <td>⭐ 星耀</td>
+            <td>8-12x</td>
+            <td>₹2000+</td>
+        </tr>
+        <tr>
+            <td>👑 王者</td>
+            <td>10-15x</td>
+            <td>₹5000+</td>
+        </tr>
+    </table>
+
+    <h2>5. VIP系统</h2>
+    
+    <div class="highlight">
+        <strong>VIP获取条件：</strong>连续 5 天每日充值 ₹5,000
+    </div>
+    
+    <p><strong>VIP特权：</strong></p>
+    <ul>
+        <li>所有号码权重 ×1.5</li>
+        <li>永久 VIP 身份（不会降级）</li>
+        <li>VIP 专属号码前缀</li>
+        <li>充值申请优先审核</li>
+    </ul>
+
+    <h2>6. 开奖机制</h2>
+    
+    <h3>6.1 开奖时间</h3>
+    <p>每日 <strong>21:00 IST</strong>（印度标准时间，UTC+5:30）自动开奖</p>
+    
+    <h3>6.2 奖金分配</h3>
+    <table>
+        <tr>
+            <th>奖项</th>
+            <th>人数</th>
+            <th>奖池比例</th>
+            <th>示例（₹10,000）</th>
+        </tr>
+        <tr>
+            <td>🥇 一等奖</td>
+            <td>1</td>
+            <td>40%</td>
+            <td>₹4,000</td>
+        </tr>
+        <tr>
+            <td>🥈 二等奖</td>
+            <td>2</td>
+            <td>20%</td>
+            <td>₹2,000/人</td>
+        </tr>
+        <tr>
+            <td>🥉 三等奖</td>
+            <td>剩余</td>
+            <td>20%</td>
+            <td>平分 ₹2,000</td>
+        </tr>
+    </table>
+
+    <h2>7. 运营配置指南</h2>
+    
+    <h3>7.1 环境变量配置</h3>
+    <div class="code-block">
+# 必需配置
+BOT_TOKEN=123456789:ABCdefGHIjklMNOpqrsTUVwxyz
+ADMIN_IDS=123456789,987654321
+GAME_DOWNLOAD_URL=https://your-game-link.com
+
+# 可选配置
+CURRENCY=₹
+TIMEZONE=Asia/Kolkata
+    </div>
+
+    <h3>7.2 日常运营 Checklist</h3>
+    
+    <h4>每日必做</h4>
+    <ul class="checklist">
+        <li>检查待审核列表（09:00, 15:00, 20:00）</li>
+        <li>确认开奖正常执行（21:00）</li>
+        <li>处理中奖者 UPI 发放</li>
+        <li>回复用户咨询</li>
+    </ul>
+
+    <h4>每周必做</h4>
+    <ul class="checklist">
+        <li>统计周数据（用户数、充值额、开奖情况）</li>
+        <li>检查服务器日志</li>
+        <li>备份数据库</li>
+        <li>更新推广素材</li>
+    </ul>
+
+    <h2>8. 常见问题</h2>
+    
+    <h3>Q: Game ID 在哪里找？</h3>
+    <p>A: 打开 Teen Patti Master 游戏 → 点击左上角头像 → 复制显示的 7 位数字</p>
+    
+    <h3>Q: 多久能收到号码？</h3>
+    <p>A: 管理员审核通常需要 5-30 分钟，高峰期可能延长</p>
+    
+    <h3>Q: 中奖了怎么领奖？</h3>
+    <p>A: 中奖后 48 小时内发放到 UPI 账户，确保在 "My Account" 设置了正确的 UPI ID</p>
+
+    <div class="footer">
+        <p><strong>TeenPatti Lucky Bot 运营手册 v1.0</strong></p>
+        <p>最后更新：2026-03-16 | 编写：OpenClaw AI</p>
+        <p>GitHub: https://github.com/leigc0113-coder/teenpatti-website</p>
+    </div>
+
+    <div class="no-print" style="margin-top: 30px; padding: 20px; background: #f0f0f0; border-radius: 8px; text-align: center;">
+        <p><strong>💡 PDF 生成说明：</strong></p>
+        <p>在浏览器中打开此文件，按 Ctrl+P（或 Cmd+P），选择"另存为 PDF"即可</p>
+    </div>
+</body>
+</html>
