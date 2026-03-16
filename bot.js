@@ -28,6 +28,10 @@ const DrawService = require('./drawService');
 const InviteService = require('./inviteService');
 const RechargeService = require('./rechargeService');
 
+// 引入新菜单系统
+const MenuRouter = require('./menuRouter');
+const MenuContent = require('./menuContent');
+
 // 引入私域联动系统
 const ChannelGroupBotIntegration = require('./integration');
 
@@ -47,8 +51,13 @@ console.log('  REQUIRE_CHANNEL_SUBSCRIPTION:', CONFIG.REQUIRE_CHANNEL_SUBSCRIPTI
 const integration = new ChannelGroupBotIntegration(bot);
 
 // 初始化数据库
+let menuRouter;
 Database.init().then(async () => {
     console.log('✅ Database initialized');
+    
+    // 初始化菜单路由系统
+    menuRouter = new MenuRouter(bot, UserService, TierService, VIPService);
+    console.log('✅ Menu router initialized');
     
     // 启动时检查并释放冷静期结束的号码
     try {
@@ -258,6 +267,20 @@ bot.onText(/\/start(?:\s+(.+))?/, async (msg, match) => {
 
 // ==================== Callback Handlers ====================
 
+// 新菜单系统回调处理器（优先级最高）
+bot.on('callback_query', async (query) => {
+    const data = query.data;
+    
+    // 如果是新菜单系统的回调，使用 MenuRouter 处理
+    if (data.startsWith('menu_') || data.startsWith('action_')) {
+        if (menuRouter) {
+            await menuRouter.handleCallback(query);
+            return;
+        }
+    }
+});
+
+// 原有回调处理器
 bot.on('callback_query', async (query) => {
     const chatId = query.message.chat.id;
     const userId = query.from.id;
@@ -1873,19 +1896,25 @@ bot.onText(/\/pool|Current Pool/, async (msg) => {
     }
 });
 
-// Help
+// Help - 使用新菜单系统
 bot.onText(/\/help|❓ Help/, async (msg) => {
     const chatId = msg.chat.id;
 
-    const helpText =
-        '📖 *Help Center*\n' +
-        '━━━━━━━━━━━━━━━━\n\n' +
-        'Select a topic below to learn more:';
+    // 使用新的菜单系统显示帮助中心
+    if (menuRouter) {
+        await menuRouter.showMainMenu(chatId);
+    } else {
+        // 降级方案：使用旧的菜单
+        const helpText =
+            '📖 *Help Center*\n' +
+            '━━━━━━━━━━━━━━━━\n\n' +
+            'Select a topic below to learn more:';
 
-    await bot.sendMessage(chatId, helpText, {
-        parse_mode: 'Markdown',
-        ...getHelpMenu()
-    });
+        await bot.sendMessage(chatId, helpText, {
+            parse_mode: 'Markdown',
+            ...getHelpMenu()
+        });
+    }
 });
 
 // ==================== Draw & Notifications ====================
