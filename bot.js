@@ -1462,12 +1462,16 @@ bot.onText(/\/myaccount|My Account/, async (msg) => {
 
         let pool = null;
         try {
-            pool = await PoolService.getTodayPool();
-            if (!pool || !pool.finalAmount) {
-                pool = await PoolService.calculateDailyPool(today);
-            }
+            // 每次查看都重新计算奖池（获取最新数据）
+            pool = await PoolService.calculateDailyPool(today);
         } catch (e) {
-            console.error('[ACCOUNT] Get pool failed:', e);
+            console.error('[ACCOUNT] Calculate pool failed:', e);
+            // 如果计算失败，尝试获取已存在的
+            try {
+                pool = await PoolService.getTodayPool();
+            } catch (e2) {
+                console.error('[ACCOUNT] Get pool failed:', e2);
+            }
         }
 
         let msg_text = '👤 *My Account*\n';
@@ -1777,12 +1781,17 @@ bot.onText(/\/pool|Current Pool/, async (msg) => {
 
         let pool = null;
         try {
-            pool = await PoolService.getTodayPool();
-            if (!pool || !pool.finalAmount) {
-                pool = await PoolService.calculateDailyPool(today);
-            }
+            // 每次点击都重新计算奖池（获取最新充值数据）
+            pool = await PoolService.calculateDailyPool(today);
+            console.log(`[POOL] Calculated pool for ${today}: ₹${pool?.finalAmount || 0}`);
         } catch (e) {
             console.error('[POOL] Error:', e);
+            // 如果计算失败，尝试获取已存在的奖池
+            try {
+                pool = await PoolService.getTodayPool();
+            } catch (e2) {
+                console.error('[POOL] Get existing pool failed:', e2);
+            }
         }
 
         // 获取印度时间和倒计时
