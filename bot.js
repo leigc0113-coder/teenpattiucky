@@ -358,13 +358,20 @@ bot.on('callback_query', async (query) => {
         }
 
         // ===== 充值档位选择 =====
-        if (data.startsWith('tier_')) {
+        if (data.startsWith('tier_') && !data.startsWith('tier_existing_')) {
             const tierAmount = parseInt(data.replace('tier_', ''));
             const state = userState.get(userId);
 
-            if (!state || state.step !== 'waiting_recharge_tier') {
-                await bot.answerCallbackQuery(query.id, { text: '❌ Session expired' });
+            console.log(`[TIER] User ${userId} selected ₹${tierAmount}, current state:`, state);
+
+            if (!state) {
+                await bot.answerCallbackQuery(query.id, { text: '❌ Please start over with /start' });
                 return;
+            }
+
+            // 兼容不同状态
+            if (state.step !== 'waiting_recharge_tier') {
+                console.log(`[TIER] State mismatch for user ${userId}: expected waiting_recharge_tier, got ${state.step}`);
             }
 
             userState.set(userId, {
@@ -374,28 +381,35 @@ bot.on('callback_query', async (query) => {
                 timestamp: Date.now()
             });
 
-            await bot.editMessageText(
-                `💰 *Recharge Entry - ₹${tierAmount.toLocaleString()}*\n\n` +
-                '📱 *Steps:*\n' +
-                '1️⃣ Open Teen Patti Master game\n' +
-                `2️⃣ Recharge *₹${tierAmount.toLocaleString()}*\n` +
-                '3️⃣ Screenshot the payment success page\n' +
-                '4️⃣ Send screenshot here\n\n' +
-                '⚠️ *Screenshot must show:*\n' +
-                '• Payment amount\n' +
-                '• Transaction time\n\n' +
-                '📤 *Please send your screenshot now:*',
-                {
-                    chat_id: chatId,
-                    message_id: messageId,
-                    parse_mode: 'Markdown',
-                    reply_markup: {
-                        inline_keyboard: [[{ text: '❌ Cancel', callback_data: 'cancel_join' }]]
-                    }
-                }
-            );
+            console.log(`[TIER] Updated state for user ${userId}: waiting_recharge_screenshot, amount: ₹${tierAmount}`);
 
-            await bot.answerCallbackQuery(query.id, { text: `Please send ₹${tierAmount} screenshot` });
+            try {
+                await bot.editMessageText(
+                    `💰 *Recharge Entry - ₹${tierAmount.toLocaleString()}*\n\n` +
+                    '📱 *Steps:*\n' +
+                    '1️⃣ Open Teen Patti Master game\n' +
+                    `2️⃣ Recharge *₹${tierAmount.toLocaleString()}*\n` +
+                    '3️⃣ Screenshot the payment success page\n' +
+                    '4️⃣ Send screenshot here\n\n' +
+                    '⚠️ *Screenshot must show:*\n' +
+                    '• Payment amount\n' +
+                    '• Transaction time\n\n' +
+                    '📤 *Please send your screenshot now:*',
+                    {
+                        chat_id: chatId,
+                        message_id: messageId,
+                        parse_mode: 'Markdown',
+                        reply_markup: {
+                            inline_keyboard: [[{ text: '❌ Cancel', callback_data: 'cancel_join' }]]
+                        }
+                    }
+                );
+
+                await bot.answerCallbackQuery(query.id, { text: `Please send ₹${tierAmount} screenshot` });
+            } catch (error) {
+                console.error('[TIER] Error editing message:', error);
+                await bot.answerCallbackQuery(query.id, { text: '❌ Error, please try again' });
+            }
             return;
         }
 
@@ -487,40 +501,71 @@ bot.on('callback_query', async (query) => {
             const tierAmount = parseInt(data.replace('tier_existing_', ''));
             const state = userState.get(userId);
 
-            if (!state || state.step !== 'waiting_recharge_tier_existing') {
-                await bot.answerCallbackQuery(query.id, { text: '❌ Session expired' });
-                return;
+            console.log(`[TIER_EXISTING] User ${userId} selected ₹${tierAmount}, current state:`, state);
+
+            // 如果没有状态，尝试重新设置（兼容旧消息）
+            if (!state) {
+                const user = await UserService.getUserByTelegramId(userId);
+                if (user) {
+                    console.log(`[TIER_EXISTING] Restoring state for user ${userId}`);
+                    userState.set(userId, {
+                        step: 'waiting_recharge_tier_existing',
+                        userId: user.id,
+                        timestamp: Date.now()
+                    });
+                } else {
+                    await bot.answerCallbackQuery(query.id, { text: '❌ Please click Recharge button first' });
+                    return;
+                }
+            } else if (state.step !== 'waiting_recharge_tier_existing') {
+                console.log(`[TIER_EXISTING] State mismatch for user ${userId}: expected waiting_recharge_tier_existing, got ${state.step}`);
+                // 强制更新状态
+                userState.set(userId, {
+                    ...state,
+                    step: 'waiting_recharge_tier_existing',
+                    timestamp: Date.now()
+                });
             }
 
+            // 重新获取状态
+            const currentState = userState.get(userId);
+
             userState.set(userId, {
-                ...state,
+                ...currentState,
                 step: 'waiting_recharge_screenshot_existing',
                 tierAmount: tierAmount,
                 timestamp: Date.now()
             });
 
-            await bot.editMessageText(
-                `💰 *Recharge - ₹${tierAmount.toLocaleString()}*\n\n` +
-                '📱 *Steps:*\n' +
-                '1️⃣ Open Teen Patti Master game\n' +
-                `2️⃣ Recharge *₹${tierAmount.toLocaleString()}*\n` +
-                '3️⃣ Screenshot the payment success page\n' +
-                '4️⃣ Send screenshot here\n\n' +
-                '⚠️ *Screenshot must show:*\n' +
-                '• Payment amount\n' +
-                '• Transaction time\n\n' +
-                '📤 *Please send your screenshot now:*',
-                {
-                    chat_id: chatId,
-                    message_id: messageId,
-                    parse_mode: 'Markdown',
-                    reply_markup: {
-                        inline_keyboard: [[{ text: '❌ Cancel', callback_data: 'cancel_join' }]]
-                    }
-                }
-            );
+            console.log(`[TIER_EXISTING] Updated state for user ${userId}: waiting_recharge_screenshot_existing, amount: ₹${tierAmount}`);
 
-            await bot.answerCallbackQuery(query.id, { text: `Please send ₹${tierAmount} screenshot` });
+            try {
+                await bot.editMessageText(
+                    `💰 *Recharge - ₹${tierAmount.toLocaleString()}*\n\n` +
+                    '📱 *Steps:*\n' +
+                    '1️⃣ Open Teen Patti Master game\n' +
+                    `2️⃣ Recharge *₹${tierAmount.toLocaleString()}*\n` +
+                    '3️⃣ Screenshot the payment success page\n' +
+                    '4️⃣ Send screenshot here\n\n' +
+                    '⚠️ *Screenshot must show:*\n' +
+                    '• Payment amount\n' +
+                    '• Transaction time\n\n' +
+                    '📤 *Please send your screenshot now:*',
+                    {
+                        chat_id: chatId,
+                        message_id: messageId,
+                        parse_mode: 'Markdown',
+                        reply_markup: {
+                            inline_keyboard: [[{ text: '❌ Cancel', callback_data: 'cancel_join' }]]
+                        }
+                    }
+                );
+
+                await bot.answerCallbackQuery(query.id, { text: `Please send ₹${tierAmount} screenshot` });
+            } catch (error) {
+                console.error('[TIER_EXISTING] Error editing message:', error);
+                await bot.answerCallbackQuery(query.id, { text: '❌ Error, please try again' });
+            }
             return;
         }
         // ===== 解释VIP =====
