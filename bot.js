@@ -37,6 +37,12 @@ const pendingScreenshots = new Map();
 
 const bot = new TelegramBot(CONFIG.BOT_TOKEN, { polling: true });
 
+// 调试：打印配置值
+console.log('🔧 CONFIG DEBUG:');
+console.log('  CHANNEL_ID:', CONFIG.CHANNEL_ID);
+console.log('  GROUP_ID:', CONFIG.GROUP_ID);
+console.log('  REQUIRE_CHANNEL_SUBSCRIPTION:', CONFIG.REQUIRE_CHANNEL_SUBSCRIPTION);
+
 // 初始化私域联动系统
 const integration = new ChannelGroupBotIntegration(bot);
 
