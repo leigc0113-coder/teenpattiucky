@@ -9,10 +9,12 @@
  * 机器人(Bot)   → 核心入口 + 服务中枢
  */
 
+const ExternalConfig = require('./config');
+
 const CONFIG = {
-    // Telegram ID配置
-    CHANNEL_ID: '@teenpatti_official',      // 官方频道
-    GROUP_ID: '@teenpatti_group',            // 玩家群组
+    // 从外部 config.js 读取配置（优先级高）
+    CHANNEL_ID: ExternalConfig.CHANNEL_ID || '@teenpatti_official',
+    GROUP_ID: ExternalConfig.GROUP_ID || '@teenpatti_group',
     ADMIN_GROUP_ID: '@teenpatti_admin',      // 管理员群组（可选）
     
     // 频道消息类型
