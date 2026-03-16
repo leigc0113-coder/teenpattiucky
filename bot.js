@@ -1472,6 +1472,14 @@ bot.onText(/Recharge/, async (msg) => {
             return;
         }
 
+        // 清理用户之前的状态（防止状态冲突）
+        const existingState = userState.get(userId);
+        if (existingState) {
+            console.log(`[RECHARGE] Clearing existing state for user ${userId}:`, existingState.step);
+            userState.delete(userId);
+            pendingScreenshots.delete(userId);
+        }
+
         // 已注册用户，显示档位选择
         userState.set(userId, {
             step: 'waiting_recharge_tier_existing',
@@ -1479,11 +1487,17 @@ bot.onText(/Recharge/, async (msg) => {
             timestamp: Date.now()
         });
 
-        const tier = await TierService.getTierIdentity(user.id);
+        let tierDisplay = 'Standard';
+        try {
+            const tier = await TierService.getTierIdentity(user.id);
+            tierDisplay = tier?.displayName || 'Standard';
+        } catch (e) {
+            console.log('[RECHARGE] Tier display error:', e.message);
+        }
 
         await bot.sendMessage(chatId,
             '💰 *Recharge to Get More Numbers!*\n\n' +
-            `🏆 Current Tier: ${tier?.displayName || 'Standard'}\n\n` +
+            `🏆 Current Tier: ${tierDisplay}\n\n` +
             '💰 *₹100* → 2 Silver numbers\n' +
             '💰 *₹300* → 3 Silver numbers\n' +
             '💰 *₹500* → 4 Gold numbers\n' +
@@ -1520,7 +1534,7 @@ bot.onText(/Recharge/, async (msg) => {
 
     } catch (error) {
         console.error('[RECHARGE] Error:', error);
-        await bot.sendMessage(chatId, '❌ Error. Please try again.');
+        await bot.sendMessage(chatId, '❌ Error. Please try again with /start');
     }
 });
 
