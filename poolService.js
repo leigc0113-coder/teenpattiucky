@@ -54,12 +54,17 @@ class PoolService {
         let regularRecharge = 0;  // 普通号码用户充值
         let tierRecharge = 0;     // 等级号码用户充值
 
+        console.log(`[POOL] Found ${dayRecharges.length} recharges for ${calcDate}`);
+
         for (const r of dayRecharges) {
             const identity = await Database.findOne('tierIdentities', { userId: r.userId });
+            console.log(`[POOL] User ${r.userId}: amount=₹${r.amount}, hasIdentity=${!!identity}`);
             if (identity) {
                 tierRecharge += r.amount;
+                console.log(`[POOL]   -> Tier user (10% rate)`);
             } else {
                 regularRecharge += r.amount;
+                console.log(`[POOL]   -> Regular user (15% rate)`);
             }
         }
 
@@ -67,6 +72,8 @@ class PoolService {
         const base = CONFIG.POOL.BASE_AMOUNT;
         const regularContribution = regularRecharge * CONFIG.POOL.REGULAR_RATE;
         const tierContribution = tierRecharge * CONFIG.POOL.TIER_RATE;
+        
+        console.log(`[POOL] Calculation: base=₹${base}, regular=₹${regularRecharge}(${regularContribution}), tier=₹${tierRecharge}(${tierContribution})`);
         
         // 节日加成
         const date = new Date(calcDate);
