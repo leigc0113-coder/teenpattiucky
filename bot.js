@@ -243,17 +243,144 @@ bot.on('callback_query', async (query) => {
     try {
         // ===== 立即参与 =====
         if (data === 'join_now') {
+            // 显示参与方式选择
+            await bot.editMessageText(
+                '🎯 *Choose Participation Method*\n\n' +
+                '🎁 *FREE Entry*\n' +
+                '└ Get 1 FREE lottery number\n' +
+                '└ Send Game ID only\n\n' +
+                '💰 *Recharge Entry*\n' +
+                '└ Get 2-12 numbers based on amount\n' +
+                '└ Send recharge screenshot\n\n' +
+                '⚠️ *Limit: One entry per user*',
+                {
+                    chat_id: chatId,
+                    message_id: messageId,
+                    parse_mode: 'Markdown',
+                    reply_markup: {
+                        inline_keyboard: [
+                            [{ text: '🎁 FREE Entry (1 number)', callback_data: 'join_free' }],
+                            [{ text: '💰 Recharge Entry (2-12 numbers)', callback_data: 'join_recharge' }],
+                            [{ text: '❌ Cancel', callback_data: 'cancel_join' }]
+                        ]
+                    }
+                }
+            );
+
+            await bot.answerCallbackQuery(query.id, { text: 'Select entry method' });
+            return;
+        }
+
+        // ===== 免费参与 =====
+        if (data === 'join_free') {
             userState.set(userId, {
-                step: 'waiting_screenshot',
+                step: 'waiting_free_gameid',
+                entryType: 'free',
                 timestamp: Date.now()
             });
 
             await bot.editMessageText(
-                '📱 *How to Participate:*\n\n' +
+                '🎁 *FREE Entry Application*\n\n' +
+                'You will get: *1 FREE lottery number*\n\n' +
+                '📋 *Steps:*\n' +
+                '1️⃣ Send your Teen Patti Game ID\n' +
+                '2️⃣ Wait for admin review\n' +
+                '3️⃣ Get your number after approval\n\n' +
+                '⏰ *Review time:* Within 24 hours\n\n' +
+                '⚠️ *Important:*\n' +
+                '• One entry per user only\n' +
+                '• Make sure Game ID is correct\n' +
+                '• False info will be rejected\n\n' +
+                '👇 *Please send your Game ID (7 digits):*',
+                {
+                    chat_id: chatId,
+                    message_id: messageId,
+                    parse_mode: 'Markdown',
+                    reply_markup: {
+                        inline_keyboard: [[{ text: '❌ Cancel', callback_data: 'cancel_join' }]]
+                    }
+                }
+            );
+
+            await bot.answerCallbackQuery(query.id, { text: 'Please send Game ID' });
+            return;
+        }
+
+        // ===== 充值参与 =====
+        if (data === 'join_recharge') {
+            userState.set(userId, {
+                step: 'waiting_recharge_tier',
+                entryType: 'recharge',
+                timestamp: Date.now()
+            });
+
+            await bot.editMessageText(
+                '💰 *Recharge Entry - Select Tier*\n\n' +
+                '💰 *₹100* → 2 Silver numbers\n' +
+                '💰 *₹300* → 3 Silver numbers\n' +
+                '💰 *₹500* → 4 Gold numbers\n' +
+                '💰 *₹1,000* → 5 Gold numbers\n' +
+                '💰 *₹2,000* → 6 Diamond numbers\n' +
+                '💰 *₹3,000* → 7 Diamond numbers\n' +
+                '💰 *₹5,000* → 8 Crown numbers\n' +
+                '💰 *₹10,000* → 10 Crown numbers\n' +
+                '💰 *₹20,000* → 12 VIP numbers\n\n' +
+                '👇 *Select your recharge amount:*',
+                {
+                    chat_id: chatId,
+                    message_id: messageId,
+                    parse_mode: 'Markdown',
+                    reply_markup: {
+                        inline_keyboard: [
+                            [
+                                { text: '₹100', callback_data: 'tier_100' },
+                                { text: '₹300', callback_data: 'tier_300' },
+                                { text: '₹500', callback_data: 'tier_500' }
+                            ],
+                            [
+                                { text: '₹1K', callback_data: 'tier_1000' },
+                                { text: '₹2K', callback_data: 'tier_2000' },
+                                { text: '₹3K', callback_data: 'tier_3000' }
+                            ],
+                            [
+                                { text: '₹5K', callback_data: 'tier_5000' },
+                                { text: '₹10K', callback_data: 'tier_10000' },
+                                { text: '₹20K', callback_data: 'tier_20000' }
+                            ],
+                            [{ text: '❌ Cancel', callback_data: 'cancel_join' }]
+                        ]
+                    }
+                }
+            );
+
+            await bot.answerCallbackQuery(query.id, { text: 'Select recharge amount' });
+            return;
+        }
+
+        // ===== 充值档位选择 =====
+        if (data.startsWith('tier_')) {
+            const tierAmount = parseInt(data.replace('tier_', ''));
+            const state = userState.get(userId);
+
+            if (!state || state.step !== 'waiting_recharge_tier') {
+                await bot.answerCallbackQuery(query.id, { text: '❌ Session expired' });
+                return;
+            }
+
+            userState.set(userId, {
+                ...state,
+                step: 'waiting_recharge_screenshot',
+                tierAmount: tierAmount,
+                timestamp: Date.now()
+            });
+
+            await bot.editMessageText(
+                `💰 *Recharge Entry - ₹${tierAmount.toLocaleString()}*\n\n` +
+                '📱 *Steps:*\n' +
                 '1️⃣ Open Teen Patti Master game\n' +
-                '2️⃣ Recharge any amount\n' +
-                '3️⃣ *Screenshot the payment success page*\n' +
-                '4️⃣ Send the screenshot here\n\n' +
+                `2️⃣ Recharge *₹${tierAmount.toLocaleString()}*\n` +
+                '3️⃣ Screenshot the payment success page\n' +
+                '4️⃣ Send screenshot here\n\n' +
                 '⚠️ *Screenshot must show:*\n' +
                 '• Payment amount\n' +
                 '• Transaction time\n\n' +
@@ -268,7 +395,7 @@ bot.on('callback_query', async (query) => {
                 }
             );
 
-            await bot.answerCallbackQuery(query.id, { text: '📸 Please send screenshot' });
+            await bot.answerCallbackQuery(query.id, { text: `Please send ₹${tierAmount} screenshot` });
             return;
         }
 
@@ -355,6 +482,47 @@ bot.on('callback_query', async (query) => {
             return;
         }
 
+        // ===== 充值档位选择（老用户重新充值） =====
+        if (data.startsWith('tier_existing_')) {
+            const tierAmount = parseInt(data.replace('tier_existing_', ''));
+            const state = userState.get(userId);
+
+            if (!state || state.step !== 'waiting_recharge_tier_existing') {
+                await bot.answerCallbackQuery(query.id, { text: '❌ Session expired' });
+                return;
+            }
+
+            userState.set(userId, {
+                ...state,
+                step: 'waiting_recharge_screenshot_existing',
+                tierAmount: tierAmount,
+                timestamp: Date.now()
+            });
+
+            await bot.editMessageText(
+                `💰 *Recharge - ₹${tierAmount.toLocaleString()}*\n\n` +
+                '📱 *Steps:*\n' +
+                '1️⃣ Open Teen Patti Master game\n' +
+                `2️⃣ Recharge *₹${tierAmount.toLocaleString()}*\n` +
+                '3️⃣ Screenshot the payment success page\n' +
+                '4️⃣ Send screenshot here\n\n' +
+                '⚠️ *Screenshot must show:*\n' +
+                '• Payment amount\n' +
+                '• Transaction time\n\n' +
+                '📤 *Please send your screenshot now:*',
+                {
+                    chat_id: chatId,
+                    message_id: messageId,
+                    parse_mode: 'Markdown',
+                    reply_markup: {
+                        inline_keyboard: [[{ text: '❌ Cancel', callback_data: 'cancel_join' }]]
+                    }
+                }
+            );
+
+            await bot.answerCallbackQuery(query.id, { text: `Please send ₹${tierAmount} screenshot` });
+            return;
+        }
         // ===== 解释VIP =====
         if (data === 'explain_vip') {
             await bot.answerCallbackQuery(query.id, {
@@ -414,8 +582,8 @@ bot.on('photo', async (msg) => {
     try {
         const state = userState.get(userId);
 
-        // 检查是否在新用户等待截图状态
-        if (state && state.step === 'waiting_screenshot') {
+        // 检查是否在充值参与等待截图状态
+        if (state && state.step === 'waiting_recharge_screenshot') {
             // 检查超时（30分钟）
             if (Date.now() - state.timestamp > 30 * 60 * 1000) {
                 userState.delete(userId);
@@ -424,31 +592,89 @@ bot.on('photo', async (msg) => {
             }
 
             const photoFileId = msg.photo[msg.photo.length - 1].file_id;
+            const tierAmount = state.tierAmount || 0;
 
-            // 保存截图并更新状态
-            pendingScreenshots.set(userId, {
-                photoFileId,
-                timestamp: Date.now()
-            });
+            const processingMsg = await bot.sendMessage(chatId, '⏳ Submitting your application...');
 
-            userState.set(userId, {
-                ...state,
-                step: 'waiting_gameid',
-                photoFileId
-            });
+            try {
+                // 新用户 - 需要创建用户记录
+                const existingUser = await UserService.getUserByTelegramId(userId);
+                let user;
+                
+                if (!existingUser) {
+                    // 保存截图，等待Game ID
+                    pendingScreenshots.set(userId, {
+                        photoFileId,
+                        tierAmount,
+                        timestamp: Date.now()
+                    });
 
-            await bot.sendMessage(chatId,
-                '✅ *Screenshot received!*\n\n' +
-                '🎮 *Please enter your Teen Patti Game ID:*\n' +
-                '(You can find it in your game profile)\n\n' +
-                '💡 *Example:* `1234567`',
-                { parse_mode: 'Markdown' }
-            );
+                    userState.set(userId, {
+                        ...state,
+                        step: 'waiting_recharge_gameid',
+                        photoFileId,
+                        tierAmount
+                    });
+
+                    await bot.deleteMessage(chatId, processingMsg.message_id);
+                    await bot.sendMessage(chatId,
+                        '✅ *Screenshot received!*\n\n' +
+                        '🎮 *Please enter your Teen Patti Game ID:*\n' +
+                        '(You can find it in your game profile)\n\n' +
+                        '💡 *Example:* `1234567`',
+                        { parse_mode: 'Markdown' }
+                    );
+                    return;
+                } else {
+                    // 老用户重新充值
+                    user = existingUser;
+
+                    // 提交充值审核
+                    const recharge = await RechargeService.submitRechargeForReview(
+                        user.id,
+                        photoFileId,
+                        user.gameId
+                    );
+
+                    // 保存金额信息供管理员参考
+                    recharge.requestedAmount = tierAmount;
+
+                    // 清理状态
+                    userState.delete(userId);
+
+                    await bot.deleteMessage(chatId, processingMsg.message_id);
+
+                    // 发送确认消息给用户
+                    await bot.sendMessage(chatId,
+                        '✅ *Recharge Submitted!*\n\n' +
+                        '📋 *Details:*\n' +
+                        '━━━━━━━━━━━━━━━\n' +
+                        `🎮 Game ID: ${user.gameId}\n` +
+                        `💰 Amount: ₹${tierAmount.toLocaleString()}\n` +
+                        `📸 Screenshot: Uploaded\n` +
+                        '━━━━━━━━━━━━━━━\n\n' +
+                        '⏳ *Status:* Pending admin review\n' +
+                        '⏱️ Usually takes 5-30 minutes\n\n' +
+                        '📢 *After approval, you will receive:*\n' +
+                        '• Lottery numbers based on your recharge amount',
+                        { parse_mode: 'Markdown', ...getMainMenu() }
+                    );
+
+                    // 通知管理员
+                    await notifyAdmins(user, recharge, photoFileId, user.gameId, tierAmount);
+                }
+
+            } catch (error) {
+                console.error('[RECHARGE] Submit error:', error);
+                await bot.deleteMessage(chatId, processingMsg.message_id);
+                await bot.sendMessage(chatId, '❌ Submission failed. Please try again.');
+                userState.delete(userId);
+            }
             return;
         }
 
-        // 检查是否在重新充值等待截图状态
-        if (state && state.step === 'waiting_recharge_screenshot') {
+        // 检查是否在重新充值等待截图状态（老用户）
+        if (state && state.step === 'waiting_recharge_screenshot_existing') {
             // 检查超时（30分钟）
             if (Date.now() - state.timestamp > 30 * 60 * 1000) {
                 userState.delete(userId);
@@ -457,6 +683,7 @@ bot.on('photo', async (msg) => {
             }
 
             const photoFileId = msg.photo[msg.photo.length - 1].file_id;
+            const tierAmount = state.tierAmount || 0;
             const user = await UserService.getUserByTelegramId(userId);
 
             if (!user) {
@@ -476,6 +703,9 @@ bot.on('photo', async (msg) => {
                     user.gameId
                 );
 
+                // 保存期望金额供管理员参考
+                recharge.requestedAmount = tierAmount;
+
                 // 清理状态
                 userState.delete(userId);
                 await bot.deleteMessage(chatId, processingMsg.message_id);
@@ -486,17 +716,18 @@ bot.on('photo', async (msg) => {
                     '📋 *Details:*\n' +
                     '━━━━━━━━━━━━━━━\n' +
                     `🎮 Game ID: ${user.gameId}\n` +
+                    `💰 Expected Amount: ₹${tierAmount.toLocaleString()}\n` +
                     `📸 Screenshot: Uploaded\n` +
                     '━━━━━━━━━━━━━━━\n\n' +
                     '⏳ *Status:* Pending admin review\n' +
                     '⏱️ Usually takes 5-30 minutes\n\n' +
                     '📢 *After approval, you will receive:*\n' +
-                    '• Lottery numbers based on your recharge amount',
+                    '• Lottery numbers based on verified amount',
                     { parse_mode: 'Markdown', ...getMainMenu() }
                 );
 
-                // 通知管理员
-                await notifyAdmins(user, recharge, photoFileId, user.gameId);
+                // 通知管理员（带期望金额）
+                await notifyAdmins(user, recharge, photoFileId, user.gameId, tierAmount);
 
             } catch (error) {
                 console.error('[RECHARGE] Submit error:', error);
@@ -536,7 +767,7 @@ bot.onText(/^(?!\d{7}$).+$/, async (msg) => {
     const state = userState.get(userId);
 
     // 只在等待游戏ID状态时响应
-    if (state && state.step === 'waiting_gameid') {
+    if (state && (state.step === 'waiting_free_gameid' || state.step === 'waiting_recharge_gameid')) {
         await bot.sendMessage(chatId,
             '⚠️ *Invalid Game ID format!*\n\n' +
             '🎮 Game ID must be *exactly 7 digits*\n' +
@@ -554,85 +785,176 @@ bot.onText(/^\d{7}$/, async (msg) => {
 
     try {
         const state = userState.get(userId);
-        const screenshotData = pendingScreenshots.get(userId);
 
-        // 检查是否在等待游戏ID状态
-        if (!state || state.step !== 'waiting_gameid') {
-            return; // 忽略非预期的7位数字输入
-        }
-
-        if (!screenshotData) {
-            await bot.sendMessage(chatId, '❌ Error: Screenshot not found. Please start over with /start');
-            userState.delete(userId);
-            return;
-        }
-
-        // 检查游戏ID是否已被使用
-        const existingUser = await UserService.getUserByGameId(gameId);
-        if (existingUser) {
-            await bot.sendMessage(chatId,
-                '⚠️ *This Game ID is already registered.*\n\n' +
-                'Please check your Game ID and try again, or contact support if this is your account.',
-                { parse_mode: 'Markdown' }
-            );
-            return;
-        }
-
-        const processingMsg = await bot.sendMessage(chatId, '⏳ Submitting your application...');
-
-        // 创建用户记录
-        const user = await UserService.createUser(
-            userId,
-            gameId,
-            msg.from.username || msg.from.first_name,
-            'NEW'
-        );
-
-        // 分配等级身份
-        const tierIdentity = await TierService.assignTierNumber(user.id);
-
-        // 提交充值审核（金额为0，等待管理员确认）
-        const recharge = await RechargeService.submitRechargeForReview(
-            user.id,
-            screenshotData.photoFileId,
-            gameId
-        );
-
-        // 处理邀请奖励
-        let inviteBonusText = '';
-        if (state.inviteCode) {
-            const inviteSuccess = await InviteService.processInviteRegister(user.id, state.inviteCode);
-            if (inviteSuccess) {
-                inviteBonusText = '\n\n🎁 *Invite bonus will be added after approval!*';
+        // ========== 免费参与流程 ==========
+        if (state && state.step === 'waiting_free_gameid') {
+            // 检查游戏ID是否已被使用
+            const existingUser = await UserService.getUserByGameId(gameId);
+            if (existingUser) {
+                await bot.sendMessage(chatId,
+                    '⚠️ *This Game ID is already registered.*\n\n' +
+                    'Please check your Game ID and try again, or contact support if this is your account.',
+                    { parse_mode: 'Markdown' }
+                );
+                return;
             }
+
+            const processingMsg = await bot.sendMessage(chatId, '⏳ Submitting your FREE entry...');
+
+            try {
+                // 创建用户记录
+                const user = await UserService.createUser(
+                    userId,
+                    gameId,
+                    msg.from.username || msg.from.first_name,
+                    'NEW'
+                );
+
+                // 分配等级身份
+                const tierIdentity = await TierService.assignTierNumber(user.id);
+
+                // 提交免费申请（金额为0）
+                const recharge = await RechargeService.submitRechargeForReview(
+                    user.id,
+                    null,  // 无截图
+                    gameId
+                );
+                recharge.entryType = 'free';  // 标记为免费申请
+
+                // 处理邀请奖励
+                let inviteBonusText = '';
+                if (state.inviteCode) {
+                    const inviteSuccess = await InviteService.processInviteRegister(user.id, state.inviteCode);
+                    if (inviteSuccess) {
+                        inviteBonusText = '\n\n🎁 *Invite bonus will be added after approval!*';
+                    }
+                }
+
+                // 清理状态
+                userState.delete(userId);
+
+                // 删除处理中消息
+                await bot.deleteMessage(chatId, processingMsg.message_id);
+
+                // 发送确认消息给用户
+                await bot.sendMessage(chatId,
+                    '✅ *FREE Entry Submitted!*\n\n' +
+                    '📋 *Application Details:*\n' +
+                    '━━━━━━━━━━━━━━━\n' +
+                    `🎮 Game ID: ${gameId}\n` +
+                    `🎁 Entry Type: FREE (1 number)\n` +
+                    '━━━━━━━━━━━━━━━\n\n' +
+                    '⏳ *Status:* Pending admin review\n' +
+                    '⏱️ Usually takes 5-30 minutes\n\n' +
+                    '📢 *After approval, you will receive:*\n' +
+                    '• 1 FREE lottery number\n' +
+                    '• Entry into today\'s draw at 21:00 IST' +
+                    inviteBonusText,
+                    { parse_mode: 'Markdown', ...getMainMenu() }
+                );
+
+                // 通知管理员（免费申请）
+                await notifyAdminsFree(user, recharge, gameId);
+
+            } catch (error) {
+                console.error('[FREE_ENTRY] Error:', error);
+                await bot.deleteMessage(chatId, processingMsg.message_id);
+                await bot.sendMessage(chatId, '❌ Submission failed. Please try again with /start');
+                userState.delete(userId);
+            }
+            return;
         }
 
-        // 清理状态
-        userState.delete(userId);
-        pendingScreenshots.delete(userId);
+        // ========== 充值参与流程（新用户，已发截图） ==========
+        if (state && state.step === 'waiting_recharge_gameid') {
+            const screenshotData = pendingScreenshots.get(userId);
 
-        // 删除处理中消息
-        await bot.deleteMessage(chatId, processingMsg.message_id);
+            if (!screenshotData) {
+                await bot.sendMessage(chatId, '❌ Error: Screenshot not found. Please start over with /start');
+                userState.delete(userId);
+                return;
+            }
 
-        // 发送确认消息给用户
-        await bot.sendMessage(chatId,
-            '✅ *Application Submitted!*\n\n' +
-            '📋 *Application Details:*\n' +
-            '━━━━━━━━━━━━━━━\n' +
-            `🎮 Game ID: ${gameId}\n` +
-            `📸 Screenshot: Uploaded\n` +
-            '━━━━━━━━━━━━━━━\n\n' +
-            '⏳ *Status:* Pending admin review\n' +
-            '⏱️ Usually takes 5-30 minutes\n\n' +
-            '📢 *After approval, you will receive:*\n' +
-            '• Lottery numbers based on your recharge amount\n' +
-            '• Entry into today\'s draw at 21:00 IST' +
-            inviteBonusText,
-            { parse_mode: 'Markdown', ...getMainMenu() }
-        );
+            // 检查游戏ID是否已被使用
+            const existingUser = await UserService.getUserByGameId(gameId);
+            if (existingUser) {
+                await bot.sendMessage(chatId,
+                    '⚠️ *This Game ID is already registered.*\n\n' +
+                    'Please check your Game ID and try again, or contact support if this is your account.',
+                    { parse_mode: 'Markdown' }
+                );
+                return;
+            }
 
-        // 通知管理员
-        await notifyAdmins(user, recharge, screenshotData.photoFileId, gameId);
+            const processingMsg = await bot.sendMessage(chatId, '⏳ Submitting your recharge entry...');
+
+            try {
+                // 创建用户记录
+                const user = await UserService.createUser(
+                    userId,
+                    gameId,
+                    msg.from.username || msg.from.first_name,
+                    'NEW'
+                );
+
+                // 分配等级身份
+                const tierIdentity = await TierService.assignTierNumber(user.id);
+
+                // 提交充值审核
+                const recharge = await RechargeService.submitRechargeForReview(
+                    user.id,
+                    screenshotData.photoFileId,
+                    gameId
+                );
+                recharge.requestedAmount = screenshotData.tierAmount;  // 保存期望金额
+                recharge.entryType = 'recharge';
+
+                // 处理邀请奖励
+                let inviteBonusText = '';
+                if (state.inviteCode) {
+                    const inviteSuccess = await InviteService.processInviteRegister(user.id, state.inviteCode);
+                    if (inviteSuccess) {
+                        inviteBonusText = '\n\n🎁 *Invite bonus will be added after approval!*';
+                    }
+                }
+
+                // 清理状态
+                userState.delete(userId);
+                pendingScreenshots.delete(userId);
+
+                // 删除处理中消息
+                await bot.deleteMessage(chatId, processingMsg.message_id);
+
+                // 发送确认消息给用户
+                await bot.sendMessage(chatId,
+                    '✅ *Recharge Entry Submitted!*\n\n' +
+                    '📋 *Application Details:*\n' +
+                    '━━━━━━━━━━━━━━━\n' +
+                    `🎮 Game ID: ${gameId}\n` +
+                    `💰 Expected Amount: ₹${screenshotData.tierAmount?.toLocaleString() || 'N/A'}\n` +
+                    `📸 Screenshot: Uploaded\n` +
+                    '━━━━━━━━━━━━━━━\n\n' +
+                    '⏳ *Status:* Pending admin review\n' +
+                    '⏱️ Usually takes 5-30 minutes\n\n' +
+                    '📢 *After approval, you will receive:*\n' +
+                    '• Lottery numbers based on verified amount\n' +
+                    '• Entry into today\'s draw at 21:00 IST' +
+                    inviteBonusText,
+                    { parse_mode: 'Markdown', ...getMainMenu() }
+                );
+
+                // 通知管理员（充值申请）
+                await notifyAdmins(user, recharge, screenshotData.photoFileId, gameId, screenshotData.tierAmount);
+
+            } catch (error) {
+                console.error('[RECHARGE_ENTRY] Error:', error);
+                await bot.deleteMessage(chatId, processingMsg.message_id);
+                await bot.sendMessage(chatId, '❌ Submission failed. Please try again with /start');
+                userState.delete(userId);
+                pendingScreenshots.delete(userId);
+            }
+            return;
+        }
 
     } catch (error) {
         console.error('[GAMEID] Error:', error);
@@ -644,12 +966,55 @@ bot.onText(/^\d{7}$/, async (msg) => {
 
 // ==================== Admin Notification ====================
 
-async function notifyAdmins(user, recharge, photoFileId, gameId) {
+async function notifyAdminsFree(user, recharge, gameId) {
+    const adminMsg =
+        `🎁 *New FREE Entry Pending Review!*\n\n` +
+        `👤 User: ${user.telegramId}\n` +
+        `🎮 Game ID: ${gameId}\n` +
+        `🆔 Ref: ${recharge.id.slice(-8)}\n` +
+        `📝 Type: FREE (1 number)\n\n` +
+        `⚡ *Quick Actions:*`;
+
+    const adminButtons = {
+        reply_markup: {
+            inline_keyboard: [
+                [
+                    { text: '✅ Approve FREE', callback_data: `approve_${recharge.id}_0` }
+                ],
+                [
+                    { text: '❌ Reject', callback_data: `reject_${recharge.id}_Invalid` }
+                ]
+            ]
+        }
+    };
+
+    if (CONFIG.ADMIN_IDS && CONFIG.ADMIN_IDS.length > 0) {
+        for (const adminId of CONFIG.ADMIN_IDS) {
+            try {
+                await bot.sendMessage(adminId, adminMsg, {
+                    parse_mode: 'Markdown',
+                    ...adminButtons
+                });
+            } catch (e) {
+                console.error(`[ADMIN] Notify admin ${adminId} failed:`, e);
+            }
+        }
+    }
+}
+
+async function notifyAdmins(user, recharge, photoFileId, gameId, expectedAmount = null) {
+    let expectedText = '';
+    if (expectedAmount) {
+        expectedText = `💡 Expected: ₹${expectedAmount.toLocaleString()}\n`;
+    }
+
     const adminMsg =
         `🔔 *New Recharge Pending Review!*\n\n` +
         `👤 User: ${user.telegramId}\n` +
         `🎮 Game ID: ${gameId}\n` +
-        `🆔 Ref: ${recharge.id.slice(-8)}\n\n` +
+        `🆔 Ref: ${recharge.id.slice(-8)}\n` +
+        expectedText +
+        `\n` +
         `💰 *Select Amount to Approve:*`;
 
     const adminButtons = {
@@ -1028,23 +1393,26 @@ bot.onText(/Join Now/, async (msg) => {
         return;
     }
 
-    // 设置状态为等待截图
-    userState.set(userId, {
-        step: 'waiting_screenshot',
-        timestamp: Date.now()
-    });
-
+    // 显示参与方式选择（与 /start 中的 join_now 回调一致）
     await bot.sendMessage(chatId,
-        '📱 *How to Participate:*\n\n' +
-        '1️⃣ Open Teen Patti Master game\n' +
-        '2️⃣ Recharge any amount\n' +
-        '3️⃣ *Screenshot the payment success page*\n' +
-        '4️⃣ Send the screenshot here\n\n' +
-        '⚠️ *Screenshot must show:*\n' +
-        '• Payment amount\n' +
-        '• Transaction time\n\n' +
-        '📤 *Please send your screenshot now:*',
-        { parse_mode: 'Markdown' }
+        '🎯 *Choose Participation Method*\n\n' +
+        '🎁 *FREE Entry*\n' +
+        '└ Get 1 FREE lottery number\n' +
+        '└ Send Game ID only\n\n' +
+        '💰 *Recharge Entry*\n' +
+        '└ Get 2-12 numbers based on amount\n' +
+        '└ Send recharge screenshot\n\n' +
+        '⚠️ *Limit: One entry per user*',
+        {
+            parse_mode: 'Markdown',
+            reply_markup: {
+                inline_keyboard: [
+                    [{ text: '🎁 FREE Entry (1 number)', callback_data: 'join_free' }],
+                    [{ text: '💰 Recharge Entry (2-12 numbers)', callback_data: 'join_recharge' }],
+                    [{ text: '❌ Cancel', callback_data: 'cancel_join' }]
+                ]
+            }
+        }
     );
 });
 
@@ -1067,9 +1435,9 @@ bot.onText(/Recharge/, async (msg) => {
             return;
         }
 
-        // 已注册用户，设置状态为等待截图（重新充值）
+        // 已注册用户，显示档位选择
         userState.set(userId, {
-            step: 'waiting_recharge_screenshot',
+            step: 'waiting_recharge_tier_existing',
             userId: user.id,
             timestamp: Date.now()
         });
@@ -1078,19 +1446,41 @@ bot.onText(/Recharge/, async (msg) => {
 
         await bot.sendMessage(chatId,
             '💰 *Recharge to Get More Numbers!*\n\n' +
-            `🏆 Your Current Tier: ${tier?.displayName || 'Standard'}\n` +
-            `💎 Total Recharged: ₹${(tier?.totalRecharge || 0).toLocaleString()}\n\n` +
-            '📱 *Steps:*\n' +
-            '1️⃣ Open Teen Patti Master game\n' +
-            '2️⃣ Recharge any amount\n' +
-            '3️⃣ *Screenshot the payment success page*\n' +
-            '4️⃣ Send the screenshot here\n\n' +
-            '⚠️ *Screenshot must show:*\n' +
-            '• Payment amount\n' +
-            '• Transaction time\n\n' +
-            '📤 *Please send your screenshot now:*',
-            { parse_mode: 'Markdown' }
+            `🏆 Current Tier: ${tier?.displayName || 'Standard'}\n\n` +
+            '💰 *₹100* → 2 Silver numbers\n' +
+            '💰 *₹300* → 3 Silver numbers\n' +
+            '💰 *₹500* → 4 Gold numbers\n' +
+            '💰 *₹1,000* → 5 Gold numbers\n' +
+            '💰 *₹2,000* → 6 Diamond numbers\n' +
+            '💰 *₹3,000* → 7 Diamond numbers\n' +
+            '💰 *₹5,000* → 8 Crown numbers\n' +
+            '💰 *₹10,000* → 10 Crown numbers\n' +
+            '💰 *₹20,000* → 12 VIP numbers\n\n' +
+            '👇 *Select recharge amount:*',
+            {
+                parse_mode: 'Markdown',
+                reply_markup: {
+                    inline_keyboard: [
+                        [
+                            { text: '₹100', callback_data: 'tier_existing_100' },
+                            { text: '₹300', callback_data: 'tier_existing_300' },
+                            { text: '₹500', callback_data: 'tier_existing_500' }
+                        ],
+                        [
+                            { text: '₹1K', callback_data: 'tier_existing_1000' },
+                            { text: '₹2K', callback_data: 'tier_existing_2000' },
+                            { text: '₹3K', callback_data: 'tier_existing_3000' }
+                        ],
+                        [
+                            { text: '₹5K', callback_data: 'tier_existing_5000' },
+                            { text: '₹10K', callback_data: 'tier_existing_10000' },
+                            { text: '₹20K', callback_data: 'tier_existing_20000' }
+                        ]
+                    ]
+                }
+            }
         );
+
     } catch (error) {
         console.error('[RECHARGE] Error:', error);
         await bot.sendMessage(chatId, '❌ Error. Please try again.');
