@@ -278,24 +278,39 @@ class ChannelGroupBotIntegration {
     // =====================================================
 
     /**
-     * 群组欢迎消息（新成员加入）
+     * 群组欢迎消息（新成员加入）- 60秒后自动删除
      */
     async sendGroupWelcome(chatId, newMemberName) {
-        // 获取机器人用户名
-        const botUsername = await this.getBotUsername();
-        
-        const msg = 
-            `👋 Welcome *${newMemberName}* to Teen Patti Lucky Draw Community!\n\n` +
-            `🎰 Get FREE lottery numbers daily\n` +
-            `💰 Win real cash via UPI\n` +
-            `🏆 Daily draw at 21:00 IST\n\n` +
-            `📢 Official: ${this.channelUsername}\n` +
-            `🎮 Start playing: @${botUsername}\n\n` +
-            `💡 Ask questions here anytime!`;
+        try {
+            // 获取机器人用户名
+            const botUsername = await this.getBotUsername();
+            
+            const msg = 
+                `👋 Welcome *${newMemberName}*!\n\n` +
+                `🎰 Teen Patti Lucky Draw\n` +
+                `💰 Win ₹2,000-5,000 daily\n` +
+                `🎁 FREE numbers on join\n\n` +
+                `📢 Channel: @${this.channelUsername.replace('@', '')}\n` +
+                `🎮 Play: @${botUsername}\n\n` +
+                `Good luck! 🍀`;
 
-        await this.bot.sendMessage(chatId, msg, {
-            parse_mode: 'Markdown'
-        });
+            const sentMsg = await this.bot.sendMessage(chatId, msg, {
+                parse_mode: 'Markdown'
+            });
+            
+            // 60秒后自动删除欢迎消息（避免刷屏）
+            setTimeout(async () => {
+                try {
+                    await this.bot.deleteMessage(chatId, sentMsg.message_id);
+                    console.log(`[AUTO_DELETE] Deleted welcome message for ${newMemberName}`);
+                } catch (err) {
+                    // 忽略删除失败（可能消息已被删除）
+                }
+            }, 60000); // 60秒 = 60000毫秒
+            
+        } catch (error) {
+            console.error('[SEND_GROUP_WELCOME] Error:', error);
+        }
     }
 
     /**
