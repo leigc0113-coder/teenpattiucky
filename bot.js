@@ -47,8 +47,16 @@ console.log('  REQUIRE_CHANNEL_SUBSCRIPTION:', CONFIG.REQUIRE_CHANNEL_SUBSCRIPTI
 const integration = new ChannelGroupBotIntegration(bot);
 
 // 初始化数据库
-Database.init().then(() => {
+Database.init().then(async () => {
     console.log('✅ Database initialized');
+    
+    // 启动时检查并释放冷静期结束的号码
+    try {
+        const releasedCount = await TierService.checkCoolingPeriod();
+        console.log(`✅ Released ${releasedCount} tier numbers from cooling period`);
+    } catch (e) {
+        console.error('❌ Failed to check cooling period:', e);
+    }
 }).catch(err => {
     console.error('❌ Database init failed:', err);
 });

@@ -201,10 +201,12 @@ class TierService {
     /**
      * 检查冷静期并释放号码
      * 定时任务调用，将已过冷静期的号码释放回号码池
+     * @returns {number} 释放的号码数量
      */
     async checkCoolingPeriod() {
         const today = new Date().toISOString().split('T')[0];
         const coolingNumbers = await Database.findAll('tierNumberPool', { status: 'COOLING' });
+        let releasedCount = 0;
 
         for (const num of coolingNumbers) {
             if (num.coolingEndDate && num.coolingEndDate <= today) {
@@ -215,8 +217,10 @@ class TierService {
                     coolingEndDate: null
                 });
                 console.log(`✅ 号码 ${num.id} 冷静期结束，已释放回号码池`);
+                releasedCount++;
             }
         }
+        return releasedCount;
     }
 
     /**
