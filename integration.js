@@ -14,7 +14,9 @@ const ExternalConfig = require('./config');
 const CONFIG = {
     // 从外部 config.js 读取配置（优先级高）
     CHANNEL_ID: ExternalConfig.CHANNEL_ID || '@teenpatti_official',
+    CHANNEL_USERNAME: ExternalConfig.CHANNEL_USERNAME || '@telltest222',
     GROUP_ID: ExternalConfig.GROUP_ID || '@teenpatti_group',
+    GROUP_USERNAME: ExternalConfig.GROUP_USERNAME || '@tkgfg',
     ADMIN_GROUP_ID: '@teenpatti_admin',      // 管理员群组（可选）
     
     // 频道消息类型
@@ -34,7 +36,9 @@ class ChannelGroupBotIntegration {
     constructor(bot) {
         this.bot = bot;
         this.channelId = CONFIG.CHANNEL_ID;
+        this.channelUsername = CONFIG.CHANNEL_USERNAME;
         this.groupId = CONFIG.GROUP_ID;
+        this.groupUsername = CONFIG.GROUP_USERNAME;
     }
 
     // =====================================================
@@ -92,53 +96,83 @@ class ChannelGroupBotIntegration {
     }
 
     // =====================================================
-    // 2. 欢迎消息 - 引导关注所有平台
+    // 2. 欢迎消息 - 引导关注所有平台（优化版）
     // =====================================================
 
     async sendWelcomeWithLinks(chatId, userId) {
         const isChannelMember = await this.isChannelMember(userId);
         const isGroupMember = await this.isGroupMember(userId);
         
+        // 获取今日奖池金额
+        const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
+        const isWeekend = [0, 6].includes(new Date().getDay());
+        const poolAmount = isWeekend ? '₹5,000' : '₹2,000';
+        
+        // 构建吸引人的欢迎消息
         let welcomeMsg = 
             '🎰 *Welcome to Teen Patti Lucky Draw!*\n\n' +
-            '💰 Win real cash daily with FREE lottery numbers!\n\n' +
-            '📋 *Quick Links:*\n';
+            '💰 *Daily Cash Giveaway!*\n' +
+            `Today's Prize Pool: *${poolAmount}*\n` +
+            '⏰ Draw Time: *21:00 IST*\n\n' +
+            '✨ *What You Get:*\n' +
+            '🎁 FREE lottery numbers when you join\n' +
+            '💸 Real cash prizes via UPI daily\n' +
+            '🏆 Higher chances with more numbers\n\n';
         
-        // 动态显示未关注的链接
-        if (!isChannelMember) {
-            welcomeMsg += '🔔 Official Channel: ' + this.channelId + ' (Required)\n';
+        // 添加参与步骤
+        welcomeMsg += 
+            '📋 *How to Win:*\n' +
+            '1️⃣ Click "Join Now" below\n' +
+            '2️⃣ Enter your Game ID\n' +
+            '3️⃣ Send screenshot\n' +
+            '4️⃣ Get lucky numbers!\n\n';
+        
+        // 社群状态
+        if (!isChannelMember && !isGroupMember) {
+            welcomeMsg += 
+                '🔔 *Join Our Community:*\n' +
+                'Stay updated with daily draws, winners, and exclusive bonuses!\n\n' +
+                '👇 *Click the buttons below to start:*';
+        } else if (isChannelMember && isGroupMember) {
+            welcomeMsg += 
+                '✅ *You are all set!*\n' +
+                'Click "Join Now" to get your lucky numbers!';
         } else {
-            welcomeMsg += '✅ Official Channel: Joined\n';
+            welcomeMsg += 
+                '📢 *Complete Your Setup:*\n' +
+                'Join remaining channels for full access!';
         }
-        
-        if (!isGroupMember) {
-            welcomeMsg += '💬 Player Group: ' + this.groupId + ' (Optional)\n';
-        } else {
-            welcomeMsg += '✅ Player Group: Joined\n';
-        }
-        
-        welcomeMsg += '\n🎮 Click "Join Now" to participate!';
 
-        // 创建带链接的按钮
-        const keyboard = {
-            inline_keyboard: [
-                [{ 
-                    text: '📢 Join Official Channel', 
-                    url: 'https://t.me/' + this.channelId.replace('@', '') 
-                }],
-                [{ 
-                    text: '💬 Join Player Group', 
-                    url: 'https://t.me/' + this.groupId.replace('@', '') 
-                }],
-                [{ 
-                    text: '🎮 Join Now', 
-                    callback_data: 'join_now' 
-                }]
-            ]
-        };
+        // 构建按钮（使用 @用户名 格式，不是数字ID）
+        const inline_keyboard = [];
+        
+        // 频道按钮 - 使用配置的 @用户名
+        if (!isChannelMember) {
+            inline_keyboard.push([{ 
+                text: '📢 Join Official Channel', 
+                url: 'https://t.me/' + this.channelUsername.replace('@', '')
+            }]);
+        }
+        
+        // 群组按钮 - 使用配置的 @用户名
+        if (!isGroupMember) {
+            inline_keyboard.push([{ 
+                text: '💬 Join Player Group', 
+                url: 'https://t.me/' + this.groupUsername.replace('@', '')
+            }]);
+        }
+        
+        // 始终显示 Join Now 按钮
+        inline_keyboard.push([{ 
+            text: '🎮 Join Now', 
+            callback_data: 'join_now'
+        }]);
 
         await this.bot.sendMessage(chatId, welcomeMsg, {
             parse_mode: 'Markdown',
+            reply_markup: { inline_keyboard }
+        });
+    }
             reply_markup: keyboard
         });
     }
