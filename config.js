@@ -23,18 +23,18 @@ module.exports = {
      * 官方频道ID（用于广播消息）
      * 格式：@channelname 或 -100xxxxxxxxx
      */
-    CHANNEL_ID: process.env.CHANNEL_ID,
+    CHANNEL_ID: '-1003881508220',
     
     /**
      * 玩家群组ID（用于社群互动）
      * 格式：@groupname 或 -100xxxxxxxxx
      */
-    GROUP_ID: process.env.GROUP_ID,
+    GROUP_ID: '-1003858436956',
     
     /**
      * 是否强制要求关注频道
      */
-    REQUIRE_CHANNEL_SUBSCRIPTION: process.env.REQUIRE_CHANNEL_SUBSCRIPTION === 'true' || false,
+    REQUIRE_CHANNEL_SUBSCRIPTION: false,
     
     /**
      * 频道关注奖励
