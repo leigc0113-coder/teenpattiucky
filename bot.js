@@ -1118,10 +1118,19 @@ async function processApproval(adminId, chatId, rechargeId, amount, messageId) {
     }
 
     if (!recharge || recharge.status !== 'PENDING') {
-        await bot.editMessageCaption('⚠️ Already processed', {
-            chat_id: chatId,
-            message_id: messageId
-        });
+        // 尝试编辑 caption（图片消息）
+        try {
+            await bot.editMessageCaption('⚠️ Already processed', {
+                chat_id: chatId,
+                message_id: messageId
+            });
+        } catch (e) {
+            // 如果是纯文字消息，使用 editMessageText
+            await bot.editMessageText('⚠️ Already processed', {
+                chat_id: chatId,
+                message_id: messageId
+            });
+        }
         return;
     }
 
@@ -1216,17 +1225,26 @@ async function processApproval(adminId, chatId, rechargeId, amount, messageId) {
         });
 
         // 更新管理员消息
-        await bot.editMessageCaption(
+        const adminMsg =
             `✅ *APPROVED*\n\n` +
             `👤 User: ${user.gameId || user.telegramId}\n` +
             `💰 Amount: ₹${amount.toLocaleString()}\n` +
-            `🎁 Sent: ${numbers.count} numbers`,
-            {
+            `🎁 Sent: ${numbers.count} numbers`;
+
+        // 尝试编辑 caption（图片消息），失败则用 text
+        try {
+            await bot.editMessageCaption(adminMsg, {
                 chat_id: chatId,
                 message_id: messageId,
                 parse_mode: 'Markdown'
-            }
-        );
+            });
+        } catch (e) {
+            await bot.editMessageText(adminMsg, {
+                chat_id: chatId,
+                message_id: messageId,
+                parse_mode: 'Markdown'
+            });
+        }
 
     } catch (error) {
         console.error('[APPROVE] Error:', error);
@@ -1242,10 +1260,19 @@ async function processRejection(adminId, chatId, rechargeId, reason, messageId) 
     }
 
     if (!recharge || recharge.status !== 'PENDING') {
-        await bot.editMessageCaption('⚠️ Already processed', {
-            chat_id: chatId,
-            message_id: messageId
-        });
+        // 尝试编辑 caption（图片消息）
+        try {
+            await bot.editMessageCaption('⚠️ Already processed', {
+                chat_id: chatId,
+                message_id: messageId
+            });
+        } catch (e) {
+            // 如果是纯文字消息，使用 editMessageText
+            await bot.editMessageText('⚠️ Already processed', {
+                chat_id: chatId,
+                message_id: messageId
+            });
+        }
         return;
     }
 
@@ -1266,16 +1293,26 @@ async function processRejection(adminId, chatId, rechargeId, reason, messageId) 
             );
         }
 
-        await bot.editMessageCaption(
+        // 更新管理员消息
+        const adminMsg =
             `❌ *REJECTED*\n\n` +
             `👤 User: ${user?.gameId || 'Unknown'}\n` +
-            `Reason: ${reason}`,
-            {
+            `Reason: ${reason}`;
+
+        // 尝试编辑 caption（图片消息），失败则用 text
+        try {
+            await bot.editMessageCaption(adminMsg, {
                 chat_id: chatId,
                 message_id: messageId,
                 parse_mode: 'Markdown'
-            }
-        );
+            });
+        } catch (e) {
+            await bot.editMessageText(adminMsg, {
+                chat_id: chatId,
+                message_id: messageId,
+                parse_mode: 'Markdown'
+            });
+        }
 
     } catch (error) {
         console.error('[REJECT] Error:', error);
