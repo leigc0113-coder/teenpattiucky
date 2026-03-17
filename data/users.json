@@ -114,5 +114,25 @@
     "riskLevel": 0,
     "createdAt": "2026-03-16T13:48:42.699Z",
     "lastActive": "2026-03-16T13:48:42.699Z"
+  },
+  {
+    "id": "u_123456789",
+    "telegramId": 123456789,
+    "gameId": "7654321",
+    "nickname": "TestUser",
+    "playerType": "NEW",
+    "riskLevel": 0,
+    "createdAt": "2026-03-16T20:40:32.547Z",
+    "lastActive": "2026-03-16T20:40:32.548Z"
+  },
+  {
+    "id": "u_123456789",
+    "telegramId": 123456789,
+    "gameId": "7654321",
+    "nickname": "TestUser",
+    "playerType": "NEW",
+    "riskLevel": 0,
+    "createdAt": "2026-03-16T20:41:34.146Z",
+    "lastActive": "2026-03-16T20:41:34.147Z"
   }
 ]

@@ -28,9 +28,8 @@ const DrawService = require('./drawService');
 const InviteService = require('./inviteService');
 const RechargeService = require('./rechargeService');
 
-// 引入新菜单系统（多语言版）
-const MenuRouter = require('./menuRouter.i18n');
-const MenuContent = require('./menuContent.i18n');
+// 引入历史记录服务
+const HistoryService = require('./historyService');
 
 // 引入私域联动系统
 const ChannelGroupBotIntegration = require('./integration');

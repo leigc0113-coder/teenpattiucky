@@ -63,5 +63,31 @@
     "status": "clicked",
     "registerRewardGiven": false,
     "rechargeRewardGiven": false
+  },
+  {
+    "id": "inv_test_user_001_1773693632559",
+    "inviterId": "test_user_001",
+    "inviteeId": null,
+    "inviteCode": "REFDBQOA0DD",
+    "clickTime": "2026-03-16T20:40:32.559Z",
+    "registerTime": null,
+    "firstRechargeTime": null,
+    "firstRechargeAmount": null,
+    "status": "clicked",
+    "registerRewardGiven": false,
+    "rechargeRewardGiven": false
+  },
+  {
+    "id": "inv_test_user_001_1773693694160",
+    "inviterId": "test_user_001",
+    "inviteeId": null,
+    "inviteCode": "REFTQEDOFIQ",
+    "clickTime": "2026-03-16T20:41:34.160Z",
+    "registerTime": null,
+    "firstRechargeTime": null,
+    "firstRechargeAmount": null,
+    "status": "clicked",
+    "registerRewardGiven": false,
+    "rechargeRewardGiven": false
   }
 ]

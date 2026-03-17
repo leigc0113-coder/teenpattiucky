@@ -10,5 +10,17 @@
     "participantCount": 7,
     "locked": false,
     "createdAt": "2026-03-15T12:29:24.158Z"
+  },
+  {
+    "id": "pool_2026-03-16",
+    "date": "2026-03-16",
+    "baseAmount": 1000,
+    "regularContribution": 0,
+    "tierContribution": 200,
+    "bonus": 0,
+    "finalAmount": 1200,
+    "participantCount": 1,
+    "locked": false,
+    "createdAt": "2026-03-16T20:41:34.164Z"
   }
 ]

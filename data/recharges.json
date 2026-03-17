@@ -72,5 +72,31 @@
     "reviewedAt": "2026-03-15T12:29:24.156Z",
     "reviewerId": "admin_001",
     "notes": null
+  },
+  {
+    "id": "rc_test_user_001_1773693632561",
+    "userId": "test_user_001",
+    "amount": 1000,
+    "expectedAmount": 1000,
+    "tier": "GOLD",
+    "screenshotUrl": "test_screenshot_id",
+    "status": "APPROVED",
+    "createdAt": "2026-03-16T20:40:32.561Z",
+    "reviewedAt": "2026-03-16T20:40:32.562Z",
+    "reviewerId": "admin_001",
+    "notes": null
+  },
+  {
+    "id": "rc_test_user_001_1773693694162",
+    "userId": "test_user_001",
+    "amount": 1000,
+    "expectedAmount": 1000,
+    "tier": "GOLD",
+    "screenshotUrl": "test_screenshot_id",
+    "status": "APPROVED",
+    "createdAt": "2026-03-16T20:41:34.162Z",
+    "reviewedAt": "2026-03-16T20:41:34.163Z",
+    "reviewerId": "admin_001",
+    "notes": null
   }
 ]

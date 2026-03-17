@@ -5,5 +5,12 @@
     "date": "2026-03-15",
     "consecutiveDays": 1,
     "createdAt": "2026-03-15T08:19:03.895Z"
+  },
+  {
+    "id": "chk_test_user_001_2026-03-16",
+    "userId": "test_user_001",
+    "date": "2026-03-16",
+    "consecutiveDays": 2,
+    "createdAt": "2026-03-16T20:40:32.558Z"
   }
 ]
