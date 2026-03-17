@@ -87,6 +87,62 @@ class AdminCommands {
             await this.showDrawHistory(chatId);
         });
 
+        // /testpost - 测试自动发帖（管理员专用）
+        this.bot.onText(/\/testpost(?:\s+(\w+))?/, async (msg, match) => {
+            const chatId = msg.chat.id;
+            const userId = msg.from.id;
+
+            if (!this.isAdmin(userId)) return;
+
+            const type = match[1];
+            
+            if (!type) {
+                await this.bot.sendMessage(chatId,
+                    '🧪 *测试自动发帖*\n\n' +
+                    '用法: `/testpost [类型]`\n\n' +
+                    '可用类型:\n' +
+                    '• `morning` - 早安帖子\n' +
+                    '• `game1` - 游戏推荐1\n' +
+                    '• `tips` - 技巧攻略\n' +
+                    '• `pool1` - 奖池更新1\n' +
+                    '• `game2` - 游戏推荐2\n' +
+                    '• `pool2` - 奖池更新2\n' +
+                    '• `cd3h` - 倒计时3小时\n' +
+                    '• `cd1h` - 倒计时1小时\n' +
+                    '• `cd30m` - 倒计时30分钟\n' +
+                    '• `night` - 睡前推送\n\n' +
+                    '示例: `/testpost morning`',
+                    { parse_mode: 'Markdown' }
+                );
+                return;
+            }
+
+            const validTypes = ['morning', 'game1', 'tips', 'pool1', 'game2', 'pool2', 'cd3h', 'cd1h', 'cd30m', 'night'];
+            
+            if (!validTypes.includes(type)) {
+                await this.bot.sendMessage(chatId, `❌ 无效的类型: ${type}\n请使用 /testpost 查看可用类型`);
+                return;
+            }
+
+            await this.bot.sendMessage(chatId, `⏳ 正在发送测试帖子: ${type}...`);
+
+            try {
+                // 引入 AutoPoster 并执行测试
+                const AutoPoster = require('./autoPost');
+                const poster = new AutoPoster(this.bot);
+                
+                // 清除今天的记录（允许重复测试）
+                poster.postLog.clear();
+                
+                await poster.postManual(type);
+                
+                await this.bot.sendMessage(chatId, `✅ 测试帖子 ${type} 已发送到频道！\n请检查 @telltest222`);
+            } catch (error) {
+                console.error('[TESTPOST] Error:', error);
+                await this.bot.sendMessage(chatId, `❌ 发送失败: ${error.message}`);
+            }
+        });
+
         // 处理批量添加用户的Game ID输入
         this.bot.on('message', async (msg) => {
             const chatId = msg.chat.id;
