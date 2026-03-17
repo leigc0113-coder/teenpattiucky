@@ -101,15 +101,20 @@ class AdminCommands {
                     '🧪 *测试自动发帖*\n\n' +
                     '用法: `/testpost [类型]`\n\n' +
                     '可用类型:\n' +
-                    '• `morning` - 早安帖子\n' +
+                    '• `morning` - 早安开启\n' +
                     '• `game1` - 游戏推荐1\n' +
-                    '• `tips` - 技巧攻略\n' +
+                    '• `tips` - 午休技巧\n' +
                     '• `pool1` - 奖池更新1\n' +
                     '• `game2` - 游戏推荐2\n' +
                     '• `pool2` - 奖池更新2\n' +
+                    '• `story` - 大赢家故事\n' +
                     '• `cd3h` - 倒计时3小时\n' +
+                    '• `tips2` - 技巧+紧迫感\n' +
                     '• `cd1h` - 倒计时1小时\n' +
                     '• `cd30m` - 倒计时30分钟\n' +
+                    '• `final` - 最后冲刺\n' +
+                    '• `results` - 开奖结果\n' +
+                    '• `preview` - 明日预告\n' +
                     '• `night` - 睡前推送\n\n' +
                     '示例: `/testpost morning`',
                     { parse_mode: 'Markdown' }
@@ -117,7 +122,7 @@ class AdminCommands {
                 return;
             }
 
-            const validTypes = ['morning', 'game1', 'tips', 'pool1', 'game2', 'pool2', 'cd3h', 'cd1h', 'cd30m', 'night'];
+            const validTypes = ['morning', 'game1', 'tips', 'pool1', 'game2', 'pool2', 'story', 'cd3h', 'tips2', 'cd1h', 'cd30m', 'final', 'results', 'preview', 'night'];
             
             if (!validTypes.includes(type)) {
                 await this.bot.sendMessage(chatId, `❌ 无效的类型: ${type}\n请使用 /testpost 查看可用类型`);

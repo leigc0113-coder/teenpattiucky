@@ -270,6 +270,65 @@ Play games while waiting 👇
         return arr[Math.floor(Math.random() * arr.length)];
     }
 
+    // 18:00 - 大赢家故事
+    async postWinnerStory() {
+        if (this.hasPostedToday('story')) return;
+        
+        const content = this.generator.generateWinnerStory();
+        
+        await this.sendPost(content);
+        this.markPosted('story');
+        console.log('[AUTO_POST] Winner story sent');
+    }
+
+    // 20:00 - 技巧 + 紧迫感
+    async postTipsUrgency() {
+        if (this.hasPostedToday('tips2')) return;
+        
+        const content = this.generator.generateTipsUrgency();
+        
+        await this.sendPost(content);
+        this.markPosted('tips2');
+        console.log('[AUTO_POST] Tips + urgency sent');
+    }
+
+    // 20:30 - 倒计时30分钟 + 最后冲刺
+    async postFinalPush() {
+        if (this.hasPostedToday('final')) return;
+        
+        const content = this.generator.generateFinalPush();
+        
+        await this.sendPost(content);
+        this.markPosted('final');
+        console.log('[AUTO_POST] Final push sent');
+    }
+
+    // 21:05 - 开奖结果
+    async postResults() {
+        if (this.hasPostedToday('results')) return;
+        
+        // 从数据库获取中奖者
+        const poolData = await this.getPoolData();
+        const winners = []; // 这里需要从数据库获取实际数据
+        
+        const content = this.generator.generateWinnerPost(winners, poolData);
+        
+        await this.sendPost(content);
+        this.markPosted('results');
+        console.log('[AUTO_POST] Results sent');
+    }
+
+    // 21:30 - 明日预告
+    async postTomorrowPreview() {
+        if (this.hasPostedToday('preview')) return;
+        
+        const content = this.generator.generateTomorrowPreview();
+        
+        await this.sendPost(content);
+        this.markPosted('preview');
+        console.log('[AUTO_POST] Tomorrow preview sent');
+    }
+
     // 启动定时任务
     startScheduledPosts() {
         console.log('[AUTO_POST] Starting scheduled posts...');
@@ -300,9 +359,10 @@ Play games while waiting 👇
             this.postGame2();
         }, { timezone: 'Asia/Kolkata' });
 
-        // 18:00 - 奖池更新2
+        // 18:00 - 奖池更新2 + 大赢家故事
         cron.schedule('0 18 * * *', () => {
             this.postPoolUpdate2();
+            setTimeout(() => this.postWinnerStory(), 5 * 60 * 1000); // 5分钟后发故事
         }, { timezone: 'Asia/Kolkata' });
 
         // 19:00 - 倒计时3小时
@@ -310,21 +370,26 @@ Play games while waiting 👇
             this.postCountdown3h();
         }, { timezone: 'Asia/Kolkata' });
 
-        // 20:00 - 倒计时1小时
+        // 20:00 - 技巧 + 紧迫感
         cron.schedule('0 20 * * *', () => {
-            this.postCountdown1h();
+            this.postTipsUrgency();
         }, { timezone: 'Asia/Kolkata' });
 
-        // 20:30 - 倒计时30分钟
+        // 20:30 - 倒计时30分钟 + 最后冲刺
         cron.schedule('30 20 * * *', () => {
             this.postCountdown30m();
+            setTimeout(() => this.postFinalPush(), 10 * 60 * 1000); // 10分钟后最后冲刺
         }, { timezone: 'Asia/Kolkata' });
 
-        /* 21:00 - 开奖开始（暂时不需要）
-        cron.schedule('0 21 * * *', () => {
-            this.postDrawStart();
+        // 21:05 - 开奖结果
+        cron.schedule('5 21 * * *', () => {
+            this.postResults();
         }, { timezone: 'Asia/Kolkata' });
-        */
+
+        // 21:30 - 明日预告
+        cron.schedule('30 21 * * *', () => {
+            this.postTomorrowPreview();
+        }, { timezone: 'Asia/Kolkata' });
 
         // 23:00 - 睡前
         cron.schedule('0 23 * * *', () => {
@@ -332,7 +397,7 @@ Play games while waiting 👇
         }, { timezone: 'Asia/Kolkata' });
 
         console.log('[AUTO_POST] All schedules started!');
-        console.log('[AUTO_POST] Posts per day: 10');
+        console.log('[AUTO_POST] Posts per day: 14 (community style)');
     }
 
     // 手动执行特定类型
@@ -350,13 +415,17 @@ Play games while waiting 👇
             case 'pool1': await this.postPoolUpdate1(); break;
             case 'game2': await this.postGame2(); break;
             case 'pool2': await this.postPoolUpdate2(); break;
+            case 'story': await this.postWinnerStory(); break;
             case 'cd3h': await this.postCountdown3h(); break;
+            case 'tips2': await this.postTipsUrgency(); break;
             case 'cd1h': await this.postCountdown1h(); break;
             case 'cd30m': await this.postCountdown30m(); break;
-            case 'draw': await this.postDrawStart(); break;
+            case 'final': await this.postFinalPush(); break;
+            case 'results': await this.postResults(); break;
+            case 'preview': await this.postTomorrowPreview(); break;
             case 'night': await this.postNight(); break;
             default:
-                console.log('Available types: morning, game1, tips, pool1, game2, pool2, cd3h, cd1h, cd30m, draw, night');
+                console.log('Available types: morning, game1, tips, pool1, game2, pool2, story, cd3h, tips2, cd1h, cd30m, final, results, preview, night');
         }
     }
 }
@@ -382,7 +451,22 @@ if (require.main === module) {
         });
     } else {
         console.log('Usage: node autoPost.js [type]');
-        console.log('Types: morning, game1, tips, pool1, game2, pool2, cd3h, cd1h, cd30m, draw, night');
+        console.log('Types:');
+        console.log('  morning    - 早安开启');
+        console.log('  game1      - 游戏推荐1 (Aviator)');
+        console.log('  tips       - 午休技巧');
+        console.log('  pool1      - 奖池更新1');
+        console.log('  game2      - 游戏推荐2 (Slots)');
+        console.log('  pool2      - 奖池更新2');
+        console.log('  story      - 大赢家故事');
+        console.log('  cd3h       - 倒计时3小时');
+        console.log('  tips2      - 技巧+紧迫感');
+        console.log('  cd1h       - 倒计时1小时');
+        console.log('  cd30m      - 倒计时30分钟');
+        console.log('  final      - 最后冲刺');
+        console.log('  results    - 开奖结果');
+        console.log('  preview    - 明日预告');
+        console.log('  night      - 睡前推送');
         process.exit(0);
     }
 }
