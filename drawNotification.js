@@ -82,19 +82,36 @@ class DrawNotification {
         // 通知未中奖者
         let nonWinnerNotified = 0;
         let nonWinnerSkipped = 0;
+        let nonWinnerTotal = 0;
+        
         for (const [userId, numbers] of userMap) {
             if (!winnerUserIds.has(userId)) {
+                nonWinnerTotal++;
+                console.log(`[NOTIFY] Processing non-winner ${userId} with ${numbers.length} numbers`);
+                
                 const user = await Database.findById('users', userId);
-                if (!user || !user.telegramId || user.telegramId === 0) {
+                if (!user) {
+                    console.log(`[NOTIFY] Skip non-winner ${userId}: user not found`);
+                    nonWinnerSkipped++;
+                    continue;
+                }
+                
+                if (!user.telegramId || user.telegramId === 0) {
                     console.log(`[NOTIFY] Skip non-winner ${userId}: no telegramId`);
                     nonWinnerSkipped++;
                     continue;
                 }
-                await this.notifyNonWinner(userId, numbers, winners, stats, drawDate);
-                nonWinnerNotified++;
+                
+                try {
+                    await this.notifyNonWinner(userId, numbers, winners, stats, drawDate);
+                    nonWinnerNotified++;
+                    console.log(`[NOTIFY] Successfully notified non-winner ${userId}`);
+                } catch (e) {
+                    console.error(`[NOTIFY] Failed to notify non-winner ${userId}:`, e.message);
+                }
             }
         }
-        console.log(`[NOTIFY] Notified ${nonWinnerNotified} non-winners, skipped ${nonWinnerSkipped}`);
+        console.log(`[NOTIFY] Total non-winners: ${nonWinnerTotal}, Notified: ${nonWinnerNotified}, Skipped: ${nonWinnerSkipped}`);
 
         // 发送汇总到管理员
         await this.sendAdminSummary(drawDate, winners, stats);
