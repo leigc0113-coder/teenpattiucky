@@ -198,11 +198,11 @@ class AdminCommands {
         
         if (recharges.length === 0) {
             await this.bot.sendMessage(chatId, 
-                '✅ No pending applications.\n\nAll caught up!',
+                '✅ 没有待审核的申请。\n\n所有申请已处理完毕！',
                 {
                     reply_markup: {
                         inline_keyboard: [
-                            [{ text: '🔙 Back', callback_data: 'admin_back' }]
+                            [{ text: '🔙 返回', callback_data: 'admin_back' }]
                         ]
                     }
                 }
@@ -210,21 +210,21 @@ class AdminCommands {
             return;
         }
 
-        let text = `📋 *Pending Applications (${recharges.length})*\n\n`;
+        let text = `📋 *待审核申请 (${recharges.length})*\n\n`;
 
         for (let i = 0; i < Math.min(recharges.length, 10); i++) {
             const r = recharges[i];
             const user = await Database.findById('users', r.userId);
             const shortId = r.id.slice(-8);
-            const type = r.entryType === 'free' ? '🎁 FREE' : '💰 Recharge';
+            const type = r.entryType === 'free' ? '🎁 免费' : '💰 充值';
             
             text += `#${i+1} \`${shortId}\` | ${type}\n`;
-            text += `   User: ${user?.gameId || 'Unknown'}\n`;
-            text += `   Time: ${new Date(r.createdAt).toLocaleString()}\n\n`;
+            text += `   用户: ${user?.gameId || 'Unknown'}\n`;
+            text += `   时间: ${new Date(r.createdAt).toLocaleString()}\n\n`;
         }
 
         if (recharges.length > 10) {
-            text += `... and ${recharges.length - 10} more\n`;
+            text += `... 还有 ${recharges.length - 10} 个\n`;
         }
 
         await this.bot.sendMessage(chatId, text, {
@@ -232,10 +232,10 @@ class AdminCommands {
             reply_markup: {
                 inline_keyboard: [
                     [
-                        { text: '✅ Approve All FREE', callback_data: 'admin_approve_all_free' },
-                        { text: '❌ Reject Old', callback_data: 'admin_reject_all_old' }
+                        { text: '✅ 批准所有免费', callback_data: 'admin_approve_all_free' },
+                        { text: '❌ 拒绝超24小时', callback_data: 'admin_reject_all_old' }
                     ],
-                    [{ text: '🔙 Back', callback_data: 'admin_back' }]
+                    [{ text: '🔙 返回', callback_data: 'admin_back' }]
                 ]
             }
         });
@@ -255,20 +255,20 @@ class AdminCommands {
         const todayAmount = todayRecharges.reduce((sum, r) => sum + r.amount, 0);
         
         const text = 
-            '📊 *Today\'s Statistics*\n' +
+            '📊 *今日统计*\n' +
             '━━━━━━━━━━━━━━━━━━━\n\n' +
-            `👥 Total Users: ${users.length}\n` +
-            `💰 Today Recharge: ₹${todayAmount.toLocaleString()}\n` +
-            `📊 Total Approved: ${todayRecharges.length}\n` +
-            `💎 Pool Amount: ₹${(pool?.finalAmount || 0).toLocaleString()}\n\n` +
-            `⏰ Draw Time: 21:00 IST`;
+            `👥 总用户数: ${users.length}\n` +
+            `💰 今日充值: ₹${todayAmount.toLocaleString()}\n` +
+            `📊 今日批准: ${todayRecharges.length}\n` +
+            `💎 奖池金额: ₹${(pool?.finalAmount || 0).toLocaleString()}\n\n` +
+            `⏰ 开奖时间: 21:00 IST`;
 
         await this.bot.sendMessage(chatId, text, {
             parse_mode: 'Markdown',
             reply_markup: {
                 inline_keyboard: [
-                    [{ text: '🔄 Refresh', callback_data: 'admin_stats' }],
-                    [{ text: '🔙 Back', callback_data: 'admin_back' }]
+                    [{ text: '🔄 刷新', callback_data: 'admin_stats' }],
+                    [{ text: '🔙 返回', callback_data: 'admin_back' }]
                 ]
             }
         });
@@ -279,18 +279,18 @@ class AdminCommands {
         const users = await Database.getAll('users');
         const recentUsers = users.slice(-20); // 最近20个
 
-        let text = `👥 *Recent Users (${users.length} total)*\n\n`;
+        let text = `👥 *最近用户 (${users.length} 总计)*\n\n`;
 
         recentUsers.reverse().forEach((user, i) => {
             text += `${i+1}. ${user.gameId || user.telegramId}\n`;
-            text += `   Joined: ${new Date(user.createdAt).toLocaleDateString()}\n\n`;
+            text += `   注册时间: ${new Date(user.createdAt).toLocaleDateString()}\n\n`;
         });
 
         await this.bot.sendMessage(chatId, text, {
             parse_mode: 'Markdown',
             reply_markup: {
                 inline_keyboard: [
-                    [{ text: '🔙 Back', callback_data: 'admin_back' }]
+                    [{ text: '🔙 返回', callback_data: 'admin_back' }]
                 ]
             }
         });
@@ -299,17 +299,17 @@ class AdminCommands {
     // ==================== 强制开奖 ====================
     async confirmDraw(chatId) {
         const text = 
-            '⚠️ *Confirm Force Draw*\n\n' +
-            'Are you sure you want to draw winners now?\n' +
-            'This will lock the pool and select winners.';
+            '⚠️ *确认立即开奖*\n\n' +
+            '确定要立即开奖吗？\n' +
+            '这将锁定奖池并选择中奖者。';
 
         await this.bot.sendMessage(chatId, text, {
             parse_mode: 'Markdown',
             reply_markup: {
                 inline_keyboard: [
                     [
-                        { text: '✅ Yes, Draw Now', callback_data: 'confirm_draw_yes' },
-                        { text: '❌ Cancel', callback_data: 'confirm_draw_no' }
+                        { text: '✅ 确定开奖', callback_data: 'confirm_draw_yes' },
+                        { text: '❌ 取消', callback_data: 'confirm_draw_no' }
                     ]
                 ]
             }
@@ -318,55 +318,55 @@ class AdminCommands {
 
     async performDrawNow(chatId) {
         try {
-            await this.bot.sendMessage(chatId, '⏳ Performing draw...');
+            await this.bot.sendMessage(chatId, '⏳ 正在开奖...');
             
             // 调用开奖函数
             const { performDraw } = require('./bot');
             await performDraw();
             
-            await this.bot.sendMessage(chatId, '✅ Draw completed! Check winners.');
+            await this.bot.sendMessage(chatId, '✅ 开奖完成！请查看中奖名单。');
         } catch (error) {
             console.error('[ADMIN] Draw error:', error);
-            await this.bot.sendMessage(chatId, '❌ Draw failed: ' + error.message);
+            await this.bot.sendMessage(chatId, '❌ 开奖失败: ' + error.message);
         }
     }
 
     // ==================== 广播消息 ====================
     async promptBroadcast(chatId) {
         await this.bot.sendMessage(chatId, 
-            '📢 *Broadcast Message*\n\n' +
-            'Please send the message you want to broadcast to all users.\n' +
-            'Type /cancel to cancel.',
+            '📢 *广播消息*\n\n' +
+            '请发送要广播给所有用户的消息。\n' +
+            '输入 /cancel 取消。',
             { parse_mode: 'Markdown' }
         );
 
         // 这里需要设置状态等待用户输入
         // 简化版：提示使用命令 /broadcast [message]
         await this.bot.sendMessage(chatId, 
-            '💡 *Tip:* Use command:\n' +
-            '`/broadcast Your message here`'
+            '💡 *提示:* 使用命令:\n' +
+            '`/broadcast 你的消息内容`'
         );
     }
 
     // ==================== 自动化设置 ====================
     async showAutoSettings(chatId) {
         const text = 
-            '⚙️ *Automation Settings*\n' +
+            '⚙️ *自动化设置*\n' +
             '━━━━━━━━━━━━━━━━━━━\n\n' +
-            '*Available Automations:*\n\n' +
-            '✅ Auto-approve FREE entries\n' +
-            '⏰ Auto-reject after 48h\n' +
-            '📊 Daily stats at 20:00\n' +
-            '🎉 Winner announcement\n\n' +
-            '*Coming Soon:*\n' +
-            '• Auto-bonus for top rechargers\n' +
-            '• Auto-VIP for consecutive recharges';
+            '*可用自动化功能:*\n\n' +
+            '✅ 自动批准免费申请\n' +
+            '⏰ 48小时后自动拒绝\n' +
+            '📊 每日20:00统计推送\n' +
+            '🎉 中奖自动通知\n\n' +
+            '*即将推出:*\n' +
+            '• 大额充值自动奖励\n' +
+            '• 连续充值自动VIP';
 
         await this.bot.sendMessage(chatId, text, {
             parse_mode: 'Markdown',
             reply_markup: {
                 inline_keyboard: [
-                    [{ text: '🔙 Back', callback_data: 'admin_back' }]
+                    [{ text: '🔙 返回', callback_data: 'admin_back' }]
                 ]
             }
         });
@@ -380,11 +380,11 @@ class AdminCommands {
         });
 
         if (recharges.length === 0) {
-            await this.bot.sendMessage(chatId, 'No FREE entries to approve.');
+            await this.bot.sendMessage(chatId, '没有免费申请需要批准。');
             return;
         }
 
-        await this.bot.sendMessage(chatId, `⏳ Approving ${recharges.length} FREE entries...`);
+        await this.bot.sendMessage(chatId, `⏳ 正在批准 ${recharges.length} 个免费申请...`);
 
         let approved = 0;
         for (const r of recharges) {
@@ -396,7 +396,7 @@ class AdminCommands {
             }
         }
 
-        await this.bot.sendMessage(chatId, `✅ Approved ${approved}/${recharges.length} FREE entries.`);
+        await this.bot.sendMessage(chatId, `✅ 已批准 ${approved}/${recharges.length} 个免费申请。`);
     }
 
     async batchRejectOld(chatId) {
@@ -408,18 +408,18 @@ class AdminCommands {
         );
 
         if (oldPending.length === 0) {
-            await this.bot.sendMessage(chatId, 'No old pending entries (>24h).');
+            await this.bot.sendMessage(chatId, '没有超过24小时的待审核申请。');
             return;
         }
 
-        await this.bot.sendMessage(chatId, `⏳ Rejecting ${oldPending.length} old entries...`);
+        await this.bot.sendMessage(chatId, `⏳ 正在拒绝 ${oldPending.length} 个超时申请...`);
 
         let rejected = 0;
         for (const r of oldPending) {
             try {
                 await Database.update('recharges', r.id, {
                     status: 'REJECTED',
-                    rejectReason: 'Timeout (>24h)'
+                    rejectReason: '超时 (>24h)'
                 });
                 rejected++;
             } catch (e) {
@@ -427,7 +427,7 @@ class AdminCommands {
             }
         }
 
-        await this.bot.sendMessage(chatId, `✅ Rejected ${rejected} old entries.`);
+        await this.bot.sendMessage(chatId, `✅ 已拒绝 ${rejected} 个超时申请。`);
     }
 
     // ==================== 辅助函数 ====================
