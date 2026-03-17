@@ -308,10 +308,11 @@ Play games while waiting 👇
             this.postCountdown30m();
         }, { timezone: 'Asia/Kolkata' });
 
-        // 21:00 - 开奖开始
+        /* 21:00 - 开奖开始（暂时不需要）
         cron.schedule('0 21 * * *', () => {
             this.postDrawStart();
         }, { timezone: 'Asia/Kolkata' });
+        */
 
         // 23:00 - 睡前
         cron.schedule('0 23 * * *', () => {
@@ -319,7 +320,7 @@ Play games while waiting 👇
         }, { timezone: 'Asia/Kolkata' });
 
         console.log('[AUTO_POST] All schedules started!');
-        console.log('[AUTO_POST] Posts per day: 11');
+        console.log('[AUTO_POST] Posts per day: 10');
     }
 
     // 手动执行特定类型
