@@ -380,6 +380,19 @@ class ChannelGroupBotIntegration {
     }
 
     /**
+     * 获取频道人数
+     */
+    async getChannelStats() {
+        try {
+            const count = await this.bot.getChatMembersCount(this.channelId);
+            return { memberCount: count };
+        } catch (error) {
+            console.error('[CHANNEL_STATS] Error:', error);
+            return null;
+        }
+    }
+
+    /**
      * 获取群组人数
      */
     async getGroupStats() {

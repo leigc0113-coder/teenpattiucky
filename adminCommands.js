@@ -252,7 +252,8 @@ class AdminCommands {
         let groupCount = 0;
         
         try {
-            const integration = require('./integration');
+            const ChannelGroupIntegration = require('./integration');
+            const integration = new ChannelGroupIntegration(this.bot);
             const channelStats = await integration.getChannelStats();
             channelCount = channelStats?.memberCount || 0;
         } catch (e) {
@@ -260,7 +261,8 @@ class AdminCommands {
         }
         
         try {
-            const integration = require('./integration');
+            const ChannelGroupIntegration = require('./integration');
+            const integration = new ChannelGroupIntegration(this.bot);
             const groupStats = await integration.getGroupStats();
             groupCount = groupStats?.memberCount || 0;
         } catch (e) {
