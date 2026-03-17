@@ -2190,18 +2190,36 @@ console.log('💬 Group Integration: ' + (CONFIG.GROUP_ID ? 'Enabled' : 'Disable
 console.log('🔧 Admin commands loaded. Type /admin for panel');
 console.log('⚠️  Manual number management loaded. Type /adminhelp for help');
 
+// ==================== AI 内容优化大师系统 ====================
+const { initContentMasterDB } = require('./initContentDB');
+const ContentMaster = require('./contentMaster');
+
+// 初始化AI内容数据库
+initContentMasterDB().then(() => {
+    console.log('🧠 AI Content Master: Database Ready');
+}).catch(err => {
+    console.error('❌ AI Content Master DB Error:', err);
+});
+
+// 创建全局内容大师实例
+const contentMaster = new ContentMaster(bot);
+
 // ==================== AI 自动发帖系统 ====================
 const AutoPoster = require('./autoPost');
 const autoPoster = new AutoPoster(bot);
 
-// 启动自动发帖（如果配置了频道）
-if (CONFIG.CHANNEL_ID) {
+// 启动自动发帖（如果配置了频道或群组）
+if (CONFIG.CHANNEL_ID || CONFIG.GROUP_ID) {
     autoPoster.startScheduledPosts();
     console.log('🤖 AI Auto-Posting: ENABLED');
-    console.log('   Posts per day: 11 (AI generated)');
+    console.log('   Channel: @telltest222 (Ad style)');
+    console.log('   Group: @tkgfg (Community style)');
+    console.log('   Posts per day: 22 total');
+    console.log('   Features: Data-driven, Festival-aware, Segmented');
 } else {
-    console.log('🤖 AI Auto-Posting: DISABLED (no CHANNEL_ID)');
+    console.log('🤖 AI Auto-Posting: DISABLED (no CHANNEL_ID or GROUP_ID)');
 }
 
-// 导出 autoPoster 供其他地方使用（如开奖后发送中奖结果）
+// 导出供其他地方使用
 module.exports.autoPoster = autoPoster;
+module.exports.contentMaster = contentMaster;

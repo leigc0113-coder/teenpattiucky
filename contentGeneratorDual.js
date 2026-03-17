@@ -1,11 +1,15 @@
 /**
  * ============================================================
- * 双风格内容生成器 (contentGeneratorDual.js)
+ * 双风格内容生成器 v4.0 - AI优化大师版
  * ============================================================
  * 
- * 频道 @telltest222：广告风格（专业、清晰、直接推销）
+ * 频道 @telltest222：广告风格（专业、直接推销）
  * 群组 @tkgfg：社群风格（自然、朋友式、互动）
+ * 
+ * 集成：数据分析、视觉生成、节日营销、用户分层、A/B测试、情感分析
  */
+
+const ContentMaster = require('./contentMaster');
 
 class ContentGeneratorDual {
     constructor(config) {
@@ -15,6 +19,46 @@ class ContentGeneratorDual {
         this.channelId = config.CHANNEL_ID;
         this.groupId = config.GROUP_ID;
         this.gameLink = config.GAME_LINK || 'https://t.me/yourbot';
+        
+        // 初始化AI内容大师
+        this.master = new ContentMaster();
+    }
+
+    // ============ 主生成接口（集成所有AI技能）============
+    
+    async generate(type, target, data = {}) {
+        // 使用ContentMaster获取最优内容
+        const optimalContent = await this.master.getOptimalContent(type, target, {
+            gameType: data.gameType,
+            poolData: data.poolData,
+            minutes: data.minutes,
+            festival: data.festival
+        });
+        
+        // 如果没有返回优化内容，使用基础模板
+        if (!optimalContent || !optimalContent.text) {
+            return this.generateBase(type, target, data);
+        }
+        
+        return optimalContent.text;
+    }
+
+    // 基础生成（备用）
+    generateBase(type, target, data) {
+        const prefix = target === 'group' ? 'group' : 'channel';
+        const methodName = `${prefix}_${type}`;
+        
+        if (typeof this[methodName] === 'function') {
+            return this[methodName](data);
+        }
+        
+        // 默认返回
+        return this.channel_morning(data);
+    }
+
+    // 追踪帖子表现（反馈给AI学习）
+    async trackPerformance(postId, metrics) {
+        await this.master.trackPostPerformance(postId, metrics);
     }
 
     // ============ 通用工具 ============
