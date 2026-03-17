@@ -131,10 +131,7 @@ class AdminCommands {
                 const AutoPoster = require('./autoPost');
                 const poster = new AutoPoster(this.bot);
                 
-                // 清除今天的记录（允许重复测试）
-                poster.postLog.clear();
-                
-                await poster.postManual(type);
+                await poster.postManual(type, true); // true = 强制发送，绕过防重复
                 
                 await this.bot.sendMessage(chatId, `✅ 测试帖子 ${type} 已发送到频道！\n请检查 @telltest222`);
             } catch (error) {

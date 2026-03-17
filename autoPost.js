@@ -34,6 +34,17 @@ class AutoPoster {
         
         this.generator = new ContentGenerator(this.config);
         this.postLog = new Map(); // 记录已发帖时间
+        
+        // 初始化数据库
+        Database.init().catch(err => {
+            console.error('[AUTO_POST] Database init error:', err);
+        });
+    }
+
+    // 清除所有发帖记录（用于测试）
+    clearPostLog() {
+        this.postLog.clear();
+        console.log('[AUTO_POST] Post log cleared');
     }
 
     // 获取实时奖池数据
@@ -324,7 +335,13 @@ Play games while waiting 👇
     }
 
     // 手动执行特定类型
-    async postManual(type) {
+    async postManual(type, force = false) {
+        // 如果不是强制模式，检查今天是否已经发过
+        if (!force && this.hasPostedToday(type)) {
+            console.log(`[AUTO_POST] ${type} already posted today, skipping (use force=true to override)`);
+            return;
+        }
+        
         switch(type) {
             case 'morning': await this.postMorning(); break;
             case 'game1': await this.postGame1(); break;
