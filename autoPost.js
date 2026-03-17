@@ -1,20 +1,13 @@
 /**
  * ============================================================
- * 自动发帖脚本 (autoPost.js)
+ * 自动发帖脚本 v3.0 - 双风格/双目标
  * ============================================================
  * 
- * AI 动态生成内容，定时发布到频道
- * 每天内容都不同，根据实时数据变化
- * 
- * 使用方式:
- * node autoPost.js          # 手动执行所有帖子
- * node autoPost.js morning  # 手动执行特定类型
- * 
- * 定时运行（推荐添加到 bot.js）:
- * require('./autoPost').startScheduledPosts();
+ * 频道 @telltest222：广告风格（专业、直接推销）
+ * 群组 @tkgfg：社群风格（自然、朋友式）
  */
 
-const ContentGenerator = require('./contentGenerator');
+const ContentGeneratorDual = require('./contentGeneratorDual');
 const PoolService = require('./poolService');
 const Database = require('./database');
 const CONFIG = require('./config');
@@ -24,449 +17,333 @@ class AutoPoster {
     constructor(bot) {
         this.bot = bot;
         this.channelId = CONFIG.CHANNEL_ID;
+        this.groupId = CONFIG.GROUP_ID;
         
-        // 配置
         this.config = {
             BOT_NAME: CONFIG.BOT_NAME || 'TeenPatti Lucky Bot',
             APP_NAME: CONFIG.APP_NAME || 'TeenPatti Master',
             CHANNEL_ID: this.channelId,
-            GAME_LINK: CONFIG.GAME_LINK || `https://t.me/${CONFIG.BOT_USERNAME || 'yourbot'}`
+            GROUP_ID: this.groupId,
+            GAME_LINK: CONFIG.GAME_LINK || 'https://t.me/yourbot'
         };
         
-        this.generator = new ContentGenerator(this.config);
-        this.postLog = new Map(); // 记录已发帖时间
+        this.generator = new ContentGeneratorDual(this.config);
+        this.postLog = new Map();
         
-        // 初始化数据库
         Database.init().catch(err => {
             console.error('[AUTO_POST] Database init error:', err);
         });
     }
 
-    // 清除所有发帖记录（用于测试）
-    clearPostLog() {
-        this.postLog.clear();
-        console.log('[AUTO_POST] Post log cleared');
-    }
-
-    // 获取实时奖池数据
     async getPoolData() {
         try {
-            const today = new Date().toLocaleString('en-US', {
-                timeZone: 'Asia/Kolkata',
-                year: 'numeric',
-                month: '2-digit',
-                day: '2-digit'
-            });
-            const [month, day, year] = today.split('/');
-            const dateStr = `${year}-${month}-${day}`;
-            
             const pool = await PoolService.getTodayPool();
             return {
                 amount: pool?.finalAmount || pool?.amount || 0,
-                participants: pool?.participantCount || pool?.participants || 0,
-                date: dateStr
+                participants: pool?.participantCount || pool?.participants || 0
             };
         } catch (error) {
-            console.error('[AUTO_POST] Get pool data error:', error);
-            return { amount: 0, participants: 0, date: '' };
+            return { amount: 0, participants: 0 };
         }
     }
 
-    // 发送帖子
-    async sendPost(content, options = {}) {
+    async sendToChannel(content) {
         if (!this.channelId) {
             console.error('[AUTO_POST] CHANNEL_ID not configured');
             return;
         }
-
         try {
-            const result = await this.bot.sendMessage(this.channelId, content, {
-                parse_mode: 'Markdown',
-                disable_web_page_preview: false,
-                ...options
-            });
-            
-            console.log('[AUTO_POST] Posted successfully:', new Date().toISOString());
-            return result;
+            await this.bot.sendMessage(this.channelId, content, { parse_mode: 'Markdown' });
+            console.log('[AUTO_POST] Channel post sent');
         } catch (error) {
-            console.error('[AUTO_POST] Send failed:', error.message);
-            throw error;
+            console.error('[AUTO_POST] Channel send failed:', error.message);
         }
     }
 
-    // 检查今天是否已经发过此类型的帖子
+    async sendToGroup(content) {
+        if (!this.groupId) {
+            console.error('[AUTO_POST] GROUP_ID not configured');
+            return;
+        }
+        try {
+            await this.bot.sendMessage(this.groupId, content, { parse_mode: 'Markdown' });
+            console.log('[AUTO_POST] Group post sent');
+        } catch (error) {
+            console.error('[AUTO_POST] Group send failed:', error.message);
+        }
+    }
+
     hasPostedToday(type) {
-        const today = new Date().toDateString();
-        const key = `${today}_${type}`;
+        const key = `${new Date().toDateString()}_${type}`;
         return this.postLog.has(key);
     }
 
-    // 记录已发帖
     markPosted(type) {
-        const today = new Date().toDateString();
-        const key = `${today}_${type}`;
+        const key = `${new Date().toDateString()}_${type}`;
         this.postLog.set(key, new Date());
     }
 
-    // 09:00 - 早安帖子
-    async postMorning() {
-        if (this.hasPostedToday('morning')) {
-            console.log('[AUTO_POST] Morning post already sent today');
-            return;
-        }
-
+    // ============ 频道帖子（广告风格）============
+    
+    async postChannelMorning() {
+        if (this.hasPostedToday('ch_morning')) return;
         const poolData = await this.getPoolData();
-        const content = this.generator.generateMorningPost(poolData);
-        
-        await this.sendPost(content);
-        this.markPosted('morning');
-        console.log('[AUTO_POST] Morning post sent');
+        const content = this.generator.generate('morning', 'channel', poolData);
+        await this.sendToChannel(content);
+        this.markPosted('ch_morning');
     }
 
-    // 11:00 - 游戏推荐（Aviator）
-    async postGame1() {
-        if (this.hasPostedToday('game1')) return;
-        
-        const winData = Math.floor(Math.random() * 30000 + 20000); // 模拟昨日大奖
-        const content = this.generator.generateGamePost('aviator', winData);
-        
-        await this.sendPost(content);
-        this.markPosted('game1');
-        console.log('[AUTO_POST] Game post 1 sent');
+    async postChannelGame(gameType) {
+        const type = `ch_game_${gameType}`;
+        if (this.hasPostedToday(type)) return;
+        const content = this.generator.generate('game', 'channel', { gameType });
+        await this.sendToChannel(content);
+        this.markPosted(type);
     }
 
-    // 13:00 - 技巧帖子
-    async postTips() {
-        if (this.hasPostedToday('tips')) return;
-        
-        const content = this.generator.generateTipsPost();
-        
-        await this.sendPost(content);
-        this.markPosted('tips');
-        console.log('[AUTO_POST] Tips post sent');
+    async postChannelTips() {
+        if (this.hasPostedToday('ch_tips')) return;
+        const content = this.generator.generate('tips', 'channel');
+        await this.sendToChannel(content);
+        this.markPosted('ch_tips');
     }
 
-    // 15:00 - 奖池更新 + 游戏推荐（Dragon）
-    async postPoolUpdate1() {
-        if (this.hasPostedToday('pool1')) return;
-        
+    async postChannelPool() {
+        if (this.hasPostedToday('ch_pool')) return;
         const poolData = await this.getPoolData();
-        const content = this.generator.generatePoolUpdate(poolData);
-        
-        await this.sendPost(content);
-        this.markPosted('pool1');
-        console.log('[AUTO_POST] Pool update 1 sent');
+        const content = this.generator.generate('pool', 'channel', poolData);
+        await this.sendToChannel(content);
+        this.markPosted('ch_pool');
     }
 
-    // 17:00 - 游戏推荐（Slots）
-    async postGame2() {
-        if (this.hasPostedToday('game2')) return;
-        
-        const content = this.generator.generateGamePost('slots');
-        
-        await this.sendPost(content);
-        this.markPosted('game2');
-        console.log('[AUTO_POST] Game post 2 sent');
-    }
-
-    // 18:00 - 奖池更新（倒计时开始）
-    async postPoolUpdate2() {
-        if (this.hasPostedToday('pool2')) return;
-        
+    async postChannelCountdown(minutes) {
+        const type = `ch_cd_${minutes}`;
+        if (this.hasPostedToday(type)) return;
         const poolData = await this.getPoolData();
-        const content = this.generator.generatePoolUpdate(poolData);
-        
-        await this.sendPost(content);
-        this.markPosted('pool2');
-        console.log('[AUTO_POST] Pool update 2 sent');
+        const content = this.generator.generate('countdown', 'channel', { minutes, poolData });
+        await this.sendToChannel(content);
+        this.markPosted(type);
     }
 
-    // 19:00 - 倒计时（3小时）
-    async postCountdown3h() {
-        if (this.hasPostedToday('cd3h')) return;
-        
+    async postChannelWinners() {
+        if (this.hasPostedToday('ch_winners')) return;
         const poolData = await this.getPoolData();
-        const content = this.generator.generateCountdown(180, poolData);
-        
-        await this.sendPost(content);
-        this.markPosted('cd3h');
-        console.log('[AUTO_POST] Countdown 3h sent');
+        const content = this.generator.generate('winners', 'channel', poolData);
+        await this.sendToChannel(content);
+        this.markPosted('ch_winners');
     }
 
-    // 20:00 - 倒计时（1小时）
-    async postCountdown1h() {
-        if (this.hasPostedToday('cd1h')) return;
-        
+    async postChannelNight() {
+        if (this.hasPostedToday('ch_night')) return;
+        const content = this.generator.generate('night', 'channel');
+        await this.sendToChannel(content);
+        this.markPosted('ch_night');
+    }
+
+    // ============ 群组帖子（社群风格）============
+
+    async postGroupMorning() {
+        if (this.hasPostedToday('gr_morning')) return;
         const poolData = await this.getPoolData();
-        const content = this.generator.generateCountdown(60, poolData);
-        
-        await this.sendPost(content);
-        this.markPosted('cd1h');
-        console.log('[AUTO_POST] Countdown 1h sent');
+        const content = this.generator.generate('morning', 'group', poolData);
+        await this.sendToGroup(content);
+        this.markPosted('gr_morning');
     }
 
-    // 20:30 - 倒计时（30分钟）
-    async postCountdown30m() {
-        if (this.hasPostedToday('cd30m')) return;
-        
+    async postGroupGame(gameType) {
+        const type = `gr_game_${gameType}`;
+        if (this.hasPostedToday(type)) return;
+        const content = this.generator.generate('game', 'group', { gameType });
+        await this.sendToGroup(content);
+        this.markPosted(type);
+    }
+
+    async postGroupTips() {
+        if (this.hasPostedToday('gr_tips')) return;
+        const content = this.generator.generate('tips', 'group');
+        await this.sendToGroup(content);
+        this.markPosted('gr_tips');
+    }
+
+    async postGroupPool() {
+        if (this.hasPostedToday('gr_pool')) return;
         const poolData = await this.getPoolData();
-        const content = this.generator.generateCountdown(30, poolData);
-        
-        await this.sendPost(content);
-        this.markPosted('cd30m');
-        console.log('[AUTO_POST] Countdown 30m sent');
+        const content = this.generator.generate('pool', 'group', poolData);
+        await this.sendToGroup(content);
+        this.markPosted('gr_pool');
     }
 
-    // 21:00 - 开奖公告
-    async postDrawStart() {
-        if (this.hasPostedToday('drawstart')) return;
-        
-        const content = `🎉 ${this.randomEmoji('win')} LIVE DRAW STARTING NOW!
-
-🏆 Selecting lucky winners...
-⏳ Results in 2 minutes!
-
-May luck be with you! ${this.randomEmoji('luck')}
-
-Play games while waiting 👇
-👉 ${this.config.GAME_LINK}
-
-#LiveDraw #WinnersComing`;
-        
-        await this.sendPost(content);
-        this.markPosted('drawstart');
-        console.log('[AUTO_POST] Draw start announcement sent');
-    }
-
-    // 21:05 - 中奖结果
-    async postWinners(winners) {
-        if (this.hasPostedToday('winners')) return;
-        
+    async postGroupCountdown(minutes) {
+        const type = `gr_cd_${minutes}`;
+        if (this.hasPostedToday(type)) return;
         const poolData = await this.getPoolData();
-        const content = this.generator.generateWinnerPost(winners, poolData);
-        
-        await this.sendPost(content);
-        this.markPosted('winners');
-        console.log('[AUTO_POST] Winners post sent');
+        const content = this.generator.generate('countdown', 'group', { minutes, poolData });
+        await this.sendToGroup(content);
+        this.markPosted(type);
     }
 
-    // 23:00 - 睡前推送
-    async postNight() {
-        if (this.hasPostedToday('night')) return;
-        
-        const content = this.generator.generateNightPost();
-        
-        await this.sendPost(content);
-        this.markPosted('night');
-        console.log('[AUTO_POST] Night post sent');
-    }
-
-    randomEmoji(category) {
-        const emojis = {
-            win: ['🏆', '🎉', '🎊', '✨', '🥇'],
-            luck: ['🍀', '🌟', '✨', '💫', '🎯']
-        };
-        const arr = emojis[category] || ['✨'];
-        return arr[Math.floor(Math.random() * arr.length)];
-    }
-
-    // 18:00 - 大赢家故事
-    async postWinnerStory() {
-        if (this.hasPostedToday('story')) return;
-        
-        const content = this.generator.generateWinnerStory();
-        
-        await this.sendPost(content);
-        this.markPosted('story');
-        console.log('[AUTO_POST] Winner story sent');
-    }
-
-    // 20:00 - 技巧 + 紧迫感
-    async postTipsUrgency() {
-        if (this.hasPostedToday('tips2')) return;
-        
-        const content = this.generator.generateTipsUrgency();
-        
-        await this.sendPost(content);
-        this.markPosted('tips2');
-        console.log('[AUTO_POST] Tips + urgency sent');
-    }
-
-    // 20:30 - 倒计时30分钟 + 最后冲刺
-    async postFinalPush() {
-        if (this.hasPostedToday('final')) return;
-        
-        const content = this.generator.generateFinalPush();
-        
-        await this.sendPost(content);
-        this.markPosted('final');
-        console.log('[AUTO_POST] Final push sent');
-    }
-
-    // 21:05 - 开奖结果
-    async postResults() {
-        if (this.hasPostedToday('results')) return;
-        
-        // 从数据库获取中奖者
+    async postGroupWinners() {
+        if (this.hasPostedToday('gr_winners')) return;
         const poolData = await this.getPoolData();
-        const winners = []; // 这里需要从数据库获取实际数据
-        
-        const content = this.generator.generateWinnerPost(winners, poolData);
-        
-        await this.sendPost(content);
-        this.markPosted('results');
-        console.log('[AUTO_POST] Results sent');
+        const content = this.generator.generate('winners', 'group', poolData);
+        await this.sendToGroup(content);
+        this.markPosted('gr_winners');
     }
 
-    // 21:30 - 明日预告
-    async postTomorrowPreview() {
-        if (this.hasPostedToday('preview')) return;
-        
-        const content = this.generator.generateTomorrowPreview();
-        
-        await this.sendPost(content);
-        this.markPosted('preview');
-        console.log('[AUTO_POST] Tomorrow preview sent');
+    async postGroupNight() {
+        if (this.hasPostedToday('gr_night')) return;
+        const content = this.generator.generate('night', 'group');
+        await this.sendToGroup(content);
+        this.markPosted('gr_night');
     }
 
-    // 启动定时任务
+    // ============ 定时任务 ============
+
     startScheduledPosts() {
-        console.log('[AUTO_POST] Starting scheduled posts...');
+        console.log('[AUTO_POST] Starting dual-style posts...');
         console.log('[AUTO_POST] Channel:', this.channelId);
+        console.log('[AUTO_POST] Group:', this.groupId);
 
-        // 09:00 - 早安
+        // === 频道帖子（广告风格）===
+        
+        // 09:00 - 频道早安
         cron.schedule('0 9 * * *', () => {
-            this.postMorning();
+            this.postChannelMorning();
         }, { timezone: 'Asia/Kolkata' });
 
-        // 11:00 - 游戏推荐1
+        // 11:00 - 频道游戏1
         cron.schedule('0 11 * * *', () => {
-            this.postGame1();
+            this.postChannelGame('aviator');
         }, { timezone: 'Asia/Kolkata' });
 
-        // 13:00 - 技巧
+        // 13:00 - 频道技巧
         cron.schedule('0 13 * * *', () => {
-            this.postTips();
+            this.postChannelTips();
         }, { timezone: 'Asia/Kolkata' });
 
-        // 15:00 - 奖池更新1
+        // 15:00 - 频道奖池
         cron.schedule('0 15 * * *', () => {
-            this.postPoolUpdate1();
+            this.postChannelPool();
         }, { timezone: 'Asia/Kolkata' });
 
-        // 17:00 - 游戏推荐2
+        // 17:00 - 频道游戏2
         cron.schedule('0 17 * * *', () => {
-            this.postGame2();
+            this.postChannelGame('slots');
         }, { timezone: 'Asia/Kolkata' });
 
-        // 18:00 - 奖池更新2 + 大赢家故事
+        // 18:00 - 频道奖池
         cron.schedule('0 18 * * *', () => {
-            this.postPoolUpdate2();
-            setTimeout(() => this.postWinnerStory(), 5 * 60 * 1000); // 5分钟后发故事
+            this.postChannelPool();
         }, { timezone: 'Asia/Kolkata' });
 
-        // 19:00 - 倒计时3小时
+        // 19:00 - 频道倒计时3h
         cron.schedule('0 19 * * *', () => {
-            this.postCountdown3h();
+            this.postChannelCountdown(180);
         }, { timezone: 'Asia/Kolkata' });
 
-        // 20:00 - 技巧 + 紧迫感
+        // 20:00 - 频道倒计时1h
         cron.schedule('0 20 * * *', () => {
-            this.postTipsUrgency();
+            this.postChannelCountdown(60);
         }, { timezone: 'Asia/Kolkata' });
 
-        // 20:30 - 倒计时30分钟 + 最后冲刺
+        // 20:30 - 频道倒计时30m
         cron.schedule('30 20 * * *', () => {
-            this.postCountdown30m();
-            setTimeout(() => this.postFinalPush(), 10 * 60 * 1000); // 10分钟后最后冲刺
+            this.postChannelCountdown(30);
         }, { timezone: 'Asia/Kolkata' });
 
-        // 21:05 - 开奖结果
+        // 21:05 - 频道开奖结果
         cron.schedule('5 21 * * *', () => {
-            this.postResults();
+            this.postChannelWinners();
         }, { timezone: 'Asia/Kolkata' });
 
-        // 21:30 - 明日预告
-        cron.schedule('30 21 * * *', () => {
-            this.postTomorrowPreview();
-        }, { timezone: 'Asia/Kolkata' });
-
-        // 23:00 - 睡前
+        // 23:00 - 频道睡前
         cron.schedule('0 23 * * *', () => {
-            this.postNight();
+            this.postChannelNight();
+        }, { timezone: 'Asia/Kolkata' });
+
+        // === 群组帖子（社群风格）===
+
+        // 09:05 - 群组早安（稍晚于频道）
+        cron.schedule('5 9 * * *', () => {
+            this.postGroupMorning();
+        }, { timezone: 'Asia/Kolkata' });
+
+        // 11:05 - 群组游戏1
+        cron.schedule('5 11 * * *', () => {
+            this.postGroupGame('aviator');
+        }, { timezone: 'Asia/Kolkata' });
+
+        // 13:05 - 群组技巧
+        cron.schedule('5 13 * * *', () => {
+            this.postGroupTips();
+        }, { timezone: 'Asia/Kolkata' });
+
+        // 15:05 - 群组奖池
+        cron.schedule('5 15 * * *', () => {
+            this.postGroupPool();
+        }, { timezone: 'Asia/Kolkata' });
+
+        // 17:05 - 群组游戏2
+        cron.schedule('5 17 * * *', () => {
+            this.postGroupGame('slots');
+        }, { timezone: 'Asia/Kolkata' });
+
+        // 18:05 - 群组奖池
+        cron.schedule('5 18 * * *', () => {
+            this.postGroupPool();
+        }, { timezone: 'Asia/Kolkata' });
+
+        // 19:05 - 群组倒计时
+        cron.schedule('5 19 * * *', () => {
+            this.postGroupCountdown(180);
+        }, { timezone: 'Asia/Kolkata' });
+
+        // 20:05 - 群组倒计时
+        cron.schedule('5 20 * * *', () => {
+            this.postGroupCountdown(60);
+        }, { timezone: 'Asia/Kolkata' });
+
+        // 20:35 - 群组倒计时
+        cron.schedule('35 20 * * *', () => {
+            this.postGroupCountdown(30);
+        }, { timezone: 'Asia/Kolkata' });
+
+        // 21:10 - 群组开奖结果
+        cron.schedule('10 21 * * *', () => {
+            this.postGroupWinners();
+        }, { timezone: 'Asia/Kolkata' });
+
+        // 23:05 - 群组睡前
+        cron.schedule('5 23 * * *', () => {
+            this.postGroupNight();
         }, { timezone: 'Asia/Kolkata' });
 
         console.log('[AUTO_POST] All schedules started!');
-        console.log('[AUTO_POST] Posts per day: 14 (community style)');
+        console.log('[AUTO_POST] Channel posts: 11 (ad style)');
+        console.log('[AUTO_POST] Group posts: 11 (community style)');
     }
 
-    // 手动执行特定类型
-    async postManual(type, force = false) {
-        // 如果不是强制模式，检查今天是否已经发过
-        if (!force && this.hasPostedToday(type)) {
-            console.log(`[AUTO_POST] ${type} already posted today, skipping (use force=true to override)`);
-            return;
+    // ============ 手动测试 ============
+
+    async testPost(target, type, data = {}) {
+        console.log(`[TEST] Sending ${type} to ${target}...`);
+        
+        const content = this.generator.generate(type, target, data);
+        
+        if (target === 'channel') {
+            await this.sendToChannel(content);
+        } else {
+            await this.sendToGroup(content);
         }
         
-        switch(type) {
-            case 'morning': await this.postMorning(); break;
-            case 'game1': await this.postGame1(); break;
-            case 'tips': await this.postTips(); break;
-            case 'pool1': await this.postPoolUpdate1(); break;
-            case 'game2': await this.postGame2(); break;
-            case 'pool2': await this.postPoolUpdate2(); break;
-            case 'story': await this.postWinnerStory(); break;
-            case 'cd3h': await this.postCountdown3h(); break;
-            case 'tips2': await this.postTipsUrgency(); break;
-            case 'cd1h': await this.postCountdown1h(); break;
-            case 'cd30m': await this.postCountdown30m(); break;
-            case 'final': await this.postFinalPush(); break;
-            case 'results': await this.postResults(); break;
-            case 'preview': await this.postTomorrowPreview(); break;
-            case 'night': await this.postNight(); break;
-            default:
-                console.log('Available types: morning, game1, tips, pool1, game2, pool2, story, cd3h, tips2, cd1h, cd30m, final, results, preview, night');
-        }
+        console.log(`[TEST] ${type} sent to ${target}`);
     }
 }
 
-// 导出类
 module.exports = AutoPoster;
 
-// 如果直接运行此文件
+// 如果直接运行
 if (require.main === module) {
-    const TelegramBot = require('node-telegram-bot-api');
-    const bot = new TelegramBot(CONFIG.BOT_TOKEN, { polling: false });
-    
-    const poster = new AutoPoster(bot);
-    const type = process.argv[2];
-    
-    if (type) {
-        poster.postManual(type).then(() => {
-            console.log('Manual post completed');
-            process.exit(0);
-        }).catch(err => {
-            console.error('Manual post failed:', err);
-            process.exit(1);
-        });
-    } else {
-        console.log('Usage: node autoPost.js [type]');
-        console.log('Types:');
-        console.log('  morning    - 早安开启');
-        console.log('  game1      - 游戏推荐1 (Aviator)');
-        console.log('  tips       - 午休技巧');
-        console.log('  pool1      - 奖池更新1');
-        console.log('  game2      - 游戏推荐2 (Slots)');
-        console.log('  pool2      - 奖池更新2');
-        console.log('  story      - 大赢家故事');
-        console.log('  cd3h       - 倒计时3小时');
-        console.log('  tips2      - 技巧+紧迫感');
-        console.log('  cd1h       - 倒计时1小时');
-        console.log('  cd30m      - 倒计时30分钟');
-        console.log('  final      - 最后冲刺');
-        console.log('  results    - 开奖结果');
-        console.log('  preview    - 明日预告');
-        console.log('  night      - 睡前推送');
-        process.exit(0);
-    }
+    console.log('Usage: This module should be imported from bot.js');
+    console.log('Or use /testpost command in Telegram');
 }
