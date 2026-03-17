@@ -31,6 +31,9 @@ const RechargeService = require('./rechargeService');
 // 引入历史记录服务
 const HistoryService = require('./historyService');
 
+// 引入菜单路由系统
+const MenuRouter = require('./menuRouter.i18n');
+
 // 引入私域联动系统
 const ChannelGroupBotIntegration = require('./integration');
 
