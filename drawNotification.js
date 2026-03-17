@@ -25,6 +25,8 @@ class DrawNotification {
             status: { $in: ['VALID', 'WON', 'USED'] }
         });
 
+        console.log(`[NOTIFY] Found ${allNumbers.length} total numbers`);
+
         // 按用户分组
         const userMap = new Map();
         for (const num of allNumbers) {
@@ -34,8 +36,12 @@ class DrawNotification {
             userMap.get(num.userId).push(num);
         }
 
+        console.log(`[NOTIFY] Found ${userMap.size} unique users`);
+
         // 获取中奖用户ID集合
         const winnerUserIds = new Set(winners.map(w => w.userId));
+
+        console.log(`[NOTIFY] Found ${winnerUserIds.size} winners`);
 
         // 准备统计数据
         const stats = {
@@ -46,16 +52,29 @@ class DrawNotification {
         };
 
         // 通知中奖者
+        let winnerNotified = 0;
         for (const winner of winners) {
             await this.notifyWinner(winner, winners, stats);
+            winnerNotified++;
         }
+        console.log(`[NOTIFY] Notified ${winnerNotified} winners`);
 
         // 通知未中奖者
+        let nonWinnerNotified = 0;
+        let nonWinnerSkipped = 0;
         for (const [userId, numbers] of userMap) {
             if (!winnerUserIds.has(userId)) {
+                const user = await Database.findById('users', userId);
+                if (!user || !user.telegramId || user.telegramId === 0) {
+                    console.log(`[NOTIFY] Skip non-winner ${userId}: no telegramId`);
+                    nonWinnerSkipped++;
+                    continue;
+                }
                 await this.notifyNonWinner(userId, numbers, winners, stats);
+                nonWinnerNotified++;
             }
         }
+        console.log(`[NOTIFY] Notified ${nonWinnerNotified} non-winners, skipped ${nonWinnerSkipped}`);
 
         // 发送汇总到管理员
         await this.sendAdminSummary(drawDate, winners, stats);
@@ -173,9 +192,10 @@ class DrawNotification {
                 `🎰 *Tomorrow is another chance!*`;
 
             await this.bot.sendMessage(user.telegramId, message, { parse_mode: 'Markdown' });
+            console.log(`[NOTIFY] Successfully notified non-winner ${userId}`);
 
         } catch (error) {
-            console.error(`[NOTIFY] Failed to notify user ${userId}:`, error);
+            console.error(`[NOTIFY] Failed to notify user ${userId}:`, error.message);
         }
     }
 
