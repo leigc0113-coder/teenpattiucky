@@ -1,19 +1,17 @@
 /**
  * ============================================================
- * 奖池服务模块 (poolService.js)
+ * 奖池服务模块 (poolService.js) - v2.0
  * ============================================================
  * 
- * 处理奖池计算相关的业务逻辑：
- * - 每日奖池计算
- * - 充值贡献统计
- * - 安全边界应用（最低/最高限制）
- * 
- * 奖池公式：
- * 奖池 = 保底(₹1,000) + 充值抽成(15%) + 节日加成(周末30%)
+ * 更新内容：
+ * - 使用新的等级系统（人人有等级）
+ * - Bronze 等级抽成 15%，Silver+ 抽成 10%
+ * - 支持无限用户
  */
 
 const Database = require('./database');
 const CONFIG = require('./config');
+const TierService = require('./tierService');
 
 class PoolService {
 
@@ -24,7 +22,7 @@ class PoolService {
      * @returns {Object} 奖池对象
      */
     async calculateDailyPool(calcDate) {
-        // 检查是否已存在
+        // 检查是否已存在且已锁定
         let pool = await Database.findOne('pools', { date: calcDate });
         
         if (pool && pool.locked) {
@@ -42,7 +40,6 @@ class PoolService {
         const recharges = await Database.findAll('recharges', { status: 'APPROVED' });
         
         // 将 IST 日期转换为当天的 UTC 时间范围
-        // IST = UTC + 5:30，所以 IST 00:00 = UTC 前一天 18:30
         const istDate = new Date(calcDate + 'T00:00:00+05:30');
         const istDateNext = new Date(calcDate + 'T23:59:59+05:30');
         
@@ -51,37 +48,43 @@ class PoolService {
             return rechargeDate >= istDate && rechargeDate <= istDateNext;
         });
 
-        let regularRecharge = 0;  // 普通号码用户充值
-        let tierRecharge = 0;     // 等级号码用户充值
+        // 新等级系统：
+        // Bronze (Level 1): 15% 抽成
+        // Silver+ (Level 2-6): 10% 抽成
+        let bronzeRecharge = 0;   // Bronze 等级充值（15%）
+        let silverRecharge = 0;   // Silver+ 等级充值（10%）
 
         console.log(`[POOL] Found ${dayRecharges.length} recharges for ${calcDate}`);
 
         for (const r of dayRecharges) {
-            const identity = await Database.findOne('tierIdentities', { userId: r.userId });
-            console.log(`[POOL] User ${r.userId}: amount=₹${r.amount}, hasIdentity=${!!identity}`);
-            if (identity) {
-                tierRecharge += r.amount;
-                console.log(`[POOL]   -> Tier user (10% rate)`);
+            const poolRate = await TierService.getPoolRate(r.userId);
+            console.log(`[POOL] User ${r.userId}: amount=₹${r.amount}, poolRate=${poolRate}`);
+            
+            if (poolRate <= 0.10) {
+                // Silver+ 等级（10%抽成）
+                silverRecharge += r.amount;
+                console.log(`[POOL]   -> Silver+ user (10% rate)`);
             } else {
-                regularRecharge += r.amount;
-                console.log(`[POOL]   -> Regular user (15% rate)`);
+                // Bronze 等级（15%抽成）
+                bronzeRecharge += r.amount;
+                console.log(`[POOL]   -> Bronze user (15% rate)`);
             }
         }
 
         // 计算各部分
         const base = CONFIG.POOL.BASE_AMOUNT;
-        const regularContribution = regularRecharge * CONFIG.POOL.REGULAR_RATE;
-        const tierContribution = tierRecharge * CONFIG.POOL.TIER_RATE;
+        const bronzeContribution = bronzeRecharge * 0.15;  // Bronze 15%
+        const silverContribution = silverRecharge * 0.10;  // Silver+ 10%
         
-        console.log(`[POOL] Calculation: base=₹${base}, regular=₹${regularRecharge}(${regularContribution}), tier=₹${tierRecharge}(${tierContribution})`);
+        console.log(`[POOL] Calculation: base=₹${base}, bronze=₹${bronzeRecharge}(₹${bronzeContribution}), silver=₹${silverRecharge}(₹${silverContribution})`);
         
         // 节日加成
         const date = new Date(calcDate);
         const dayOfWeek = date.getDay();
-        const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;  // 0=周日, 6=周六
+        const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
         const bonusRate = isWeekend ? CONFIG.POOL.WEEKEND_BONUS : 0;
         
-        const subtotal = base + regularContribution + tierContribution;
+        const subtotal = base + bronzeContribution + silverContribution;
         const bonus = subtotal * bonusRate;
 
         // 计算最终奖池
@@ -92,11 +95,37 @@ class PoolService {
         // 获取参与人数
         const participantCount = await this.getParticipantCount(calcDate);
         
-        // 最低边界：不低于保底，不低于参与人数×2
+        // 最低边界
         const minPool = Math.max(finalAmount, participantCount * 2, CONFIG.POOL.MIN_POOL);
         
-        // 最高边界：封顶
+        // 最高边界
         const maxPool = Math.min(minPool, CONFIG.POOL.MAX_POOL);
+
+        pool.baseAmount = base;
+        pool.bronzeContribution = bronzeContribution;
+        pool.silverContribution = silverContribution;
+        pool.bronzeRecharge = bronzeRecharge;
+        pool.silverRecharge = silverRecharge;
+        pool.bonus = bonus;
+        pool.finalAmount = Math.floor(maxPool);
+        pool.participantCount = participantCount;
+        pool.locked = false;
+        pool.createdAt = new Date().toISOString();
+
+        // 保存奖池
+        if (pool.id) {
+            const existing = await Database.findById('pools', pool.id);
+            if (existing) {
+                await Database.update('pools', pool.id, pool);
+            } else {
+                await Database.insert('pools', pool);
+            }
+        } else {
+            await Database.insert('pools', pool);
+        }
+
+        return pool;
+    }
 
         pool.baseAmount = base;
         pool.regularContribution = regularContribution;
@@ -164,15 +193,15 @@ class PoolService {
      * @returns {Object|null} 奖池对象
      */
     async getTodayPool() {
-        // 使用 IST 日期（与 calculateDailyPool 一致）
-        const istDate = new Date().toLocaleString('en-US', { 
+        // 使用与 calculateDailyPool 相同的 IST 日期格式
+        const istString = new Date().toLocaleString('en-US', { 
             timeZone: 'Asia/Kolkata',
             year: 'numeric',
             month: '2-digit',
             day: '2-digit'
         });
         // 格式转换: "03/17/2026" -> "2026-03-17"
-        const [month, day, year] = istDate.split('/');
+        const [month, day, year] = istString.split('/');
         const today = `${year}-${month}-${day}`;
         return await Database.findOne('pools', { date: today });
     }

@@ -1,91 +1,118 @@
 /**
  * ============================================================
- * 等级身份服务模块 (tierService.js)
+ * 等级服务模块 v2.0 (tierService.js)
  * ============================================================
  * 
- * 处理等级身份相关的业务逻辑：
- * - 等级号码分配（10个全球唯一的稀缺号码）
- * - 等级晋升（累计充值达标后升级）
- * - 冷静期管理（号码回收机制）
+ * 重构内容：
+ * 1. 人人有等级 - 无数量限制
+ * 2. 自动升级检测
+ * 3. 累计充值追踪
+ * 4. 移除"全球唯一号码"限制
  */
 
 const Database = require('./database');
-const CONFIG = require('./config');
+const TIER_CONFIG = require('./tierConfig');
 
 class TierService {
 
     /**
-     * 获取可用的最低等级号码
-     * 按等级从低到高查找空闲号码
-     * 
-     * @returns {Object|null} 可用的等级号码或null
-     */
-    async getAvailableTierNumber() {
-        const pool = await Database.findAll('tierNumberPool', { status: 'FREE' });
-        if (pool.length === 0) return null;
-        
-        // 按等级排序，返回最低的
-        return pool.sort((a, b) => a.level - b.level)[0];
-    }
-
-    /**
-     * 为用户分配等级号码
-     * 分配当前可用的最低等级号码
+     * 为用户创建等级身份（注册时调用）
+     * 人人有等级，永不落空
      * 
      * @param {string} userId - 用户ID
-     * @returns {Object|null} 创建的等级身份或null（如果没有空闲号码）
+     * @returns {Object} 创建的等级身份
      */
-    async assignTierNumber(userId) {
-        // 获取可用号码
-        const tierNum = await this.getAvailableTierNumber();
-        if (!tierNum) return null;
-
+    async createTierIdentity(userId) {
         const now = new Date().toISOString();
-        
-        // 创建等级身份记录
+        const defaultLevel = TIER_CONFIG.DEFAULT_LEVEL;
+        const levelConfig = TIER_CONFIG.LEVELS[defaultLevel];
+
         const identity = {
             id: `tier_${userId}`,
-            userId,
-            level: tierNum.level,
-            tierName: tierNum.tierName,
-            number: tierNum.number,
-            displayName: `${tierNum.tierName}·${tierNum.number}`,
-            totalRecharge: 0,           // 累计充值金额
-            isVIP: false,               // VIP状态
-            consecutiveDays: 0,         // VIP连续达标天数
-            lastQualifiedDate: null,    // 最后达标日期
-            status: 'OCCUPIED',         // 状态
-            createdAt: now
+            userId: userId,
+            level: defaultLevel,
+            name: levelConfig.name,
+            displayName: levelConfig.displayName,
+            emoji: levelConfig.emoji,
+            totalRecharge: 0,
+            isVIP: false,
+            consecutiveVIPDays: 0,
+            lastVIPDate: null,
+            createdAt: now,
+            updatedAt: now
         };
 
-        // 保存等级身份
         await Database.insert('tierIdentities', identity);
-
-        // 更新号码池状态
-        await Database.update('tierNumberPool', tierNum.id, {
-            status: 'OCCUPIED',
-            userId,
-            assignedAt: now
-        });
-
+        console.log(`[TIER] Created identity for user ${userId}: ${identity.displayName}`);
+        
         return identity;
     }
 
     /**
-     * 获取用户的等级身份
+     * 获取用户等级身份
+     * 如果不存在，自动创建
+     * 
      * @param {string} userId - 用户ID
-     * @returns {Object|null} 等级身份或null
+     * @returns {Object|null} 等级身份
      */
     async getTierIdentity(userId) {
-        return await Database.findOne('tierIdentities', { userId });
+        let identity = await Database.findOne('tierIdentities', { userId });
+        
+        // 如果不存在，自动创建（兼容旧数据）
+        if (!identity) {
+            console.log(`[TIER] Identity not found for ${userId}, creating...`);
+            identity = await this.createTierIdentity(userId);
+        }
+        
+        return identity;
+    }
+
+    /**
+     * 累加充值金额并检查升级
+     * 
+     * @param {string} userId - 用户ID
+     * @param {number} amount - 充值金额
+     * @returns {Object} 结果 { upgraded: boolean, newLevel?: number, identity: Object }
+     */
+    async addRecharge(userId, amount) {
+        let identity = await this.getTierIdentity(userId);
+        if (!identity) {
+            identity = await this.createTierIdentity(userId);
+        }
+
+        // 累加充值金额
+        const newTotal = identity.totalRecharge + amount;
+        
+        // 更新累计充值
+        await Database.update('tierIdentities', identity.id, {
+            totalRecharge: newTotal,
+            updatedAt: new Date().toISOString()
+        });
+
+        // 检查是否可以升级
+        const targetLevel = await this.checkLevelUp(userId);
+        if (targetLevel) {
+            const upgradedIdentity = await this.levelUp(userId, targetLevel);
+            return { 
+                upgraded: true, 
+                newLevel: targetLevel,
+                identity: upgradedIdentity 
+            };
+        }
+
+        // 重新获取更新后的身份
+        identity = await this.getTierIdentity(userId);
+        return { 
+            upgraded: false, 
+            identity 
+        };
     }
 
     /**
      * 检查用户是否可以升级
-     * 根据累计充值金额判断可晋升到的等级
      * 
      * @param {string} userId - 用户ID
-     * @returns {number|null} 目标等级或null（不可升级）
+     * @returns {number|null} 目标等级或null
      */
     async checkLevelUp(userId) {
         const identity = await this.getTierIdentity(userId);
@@ -96,8 +123,9 @@ class TierService {
 
         // 检查可以升到哪个等级（支持跨级晋升）
         let targetLevel = currentLevel;
-        for (let level = currentLevel + 1; level <= 10; level++) {
-            if (totalRecharge >= CONFIG.TIER_THRESHOLDS[level]) {
+        for (let level = currentLevel + 1; level <= TIER_CONFIG.MAX_LEVEL; level++) {
+            const threshold = TIER_CONFIG.LEVELS[level].threshold;
+            if (totalRecharge >= threshold) {
                 targetLevel = level;
             } else {
                 break;
@@ -109,143 +137,153 @@ class TierService {
 
     /**
      * 执行等级晋升
-     * 将用户从当前等级晋升到目标等级
      * 
      * @param {string} userId - 用户ID
      * @param {number} targetLevel - 目标等级
-     * @returns {boolean} 是否成功
+     * @returns {Object} 更新后的等级身份
      */
     async levelUp(userId, targetLevel) {
         const identity = await this.getTierIdentity(userId);
-        if (!identity) return false;
+        if (!identity) return null;
 
-        const [tierName, number] = CONFIG.TIER_NAMES[targetLevel];
-        const targetNumId = `${tierName}·${number}`;
+        const levelConfig = TIER_CONFIG.LEVELS[targetLevel];
         
-        // 检查目标等级号码是否可用
-        const targetNum = await Database.findById('tierNumberPool', targetNumId);
-        if (!targetNum || targetNum.status !== 'FREE') {
-            return false;
-        }
-
-        const now = new Date().toISOString();
-        const today = new Date().toISOString().split('T')[0];
-
-        // ===== 原号码进入冷静期 =====
-        const oldNumId = `${identity.tierName}·${identity.number}`;
-        await Database.update('tierNumberPool', oldNumId, {
-            status: 'COOLING',
-            userId: null,
-            coolingEndDate: this.addDays(today, CONFIG.COOLING_PERIOD_DAYS)
-        });
-
-        // ===== 分配新号码 =====
-        await Database.update('tierNumberPool', targetNumId, {
-            status: 'OCCUPIED',
-            userId,
-            assignedAt: now
-        });
-
-        // ===== 更新用户等级身份 =====
-        const updates = {
+        await Database.update('tierIdentities', identity.id, {
             level: targetLevel,
-            tierName,
-            number,
-            displayName: `${tierName}·${number}`
-        };
-        
-        // 如果已是VIP，更新VIP显示名称
-        if (identity.isVIP) {
-            updates.displayName = `VIP·${tierName}·${number}`;
-        }
-        
-        await Database.update('tierIdentities', identity.id, updates);
+            name: levelConfig.name,
+            displayName: levelConfig.displayName,
+            emoji: levelConfig.emoji,
+            updatedAt: new Date().toISOString()
+        });
 
-        return true;
+        console.log(`[TIER] User ${userId} upgraded to ${levelConfig.displayName}`);
+        
+        return await this.getTierIdentity(userId);
     }
 
     /**
-     * 累加充值金额并检查升级
+     * 获取升级进度信息
      * 
      * @param {string} userId - 用户ID
-     * @param {number} amount - 充值金额
-     * @returns {Object} 结果 { upgraded: boolean, newLevel?: number, totalRecharge: number }
+     * @returns {Object} 进度信息
      */
-    async addRecharge(userId, amount) {
+    async getUpgradeProgress(userId) {
         const identity = await this.getTierIdentity(userId);
-        if (!identity) return { upgraded: false, totalRecharge: 0 };
+        if (!identity) return null;
 
-        // 累加充值金额
-        const newTotal = identity.totalRecharge + amount;
-        await Database.update('tierIdentities', identity.id, {
-            totalRecharge: newTotal
-        });
+        const currentLevel = identity.level;
+        const totalRecharge = identity.totalRecharge;
 
-        // 检查是否可以升级
-        const targetLevel = await this.checkLevelUp(userId);
-        if (targetLevel) {
-            await this.levelUp(userId, targetLevel);
-            return { 
-                upgraded: true, 
-                newLevel: targetLevel,
-                totalRecharge: newTotal 
+        // 如果已满级
+        if (currentLevel >= TIER_CONFIG.MAX_LEVEL) {
+            return {
+                currentLevel,
+                displayName: identity.displayName,
+                isMaxLevel: true,
+                message: '🌟 您已达到最高等级！'
             };
         }
 
-        return { 
-            upgraded: false, 
-            totalRecharge: newTotal 
+        // 下一等级门槛
+        const nextLevel = currentLevel + 1;
+        const nextThreshold = TIER_CONFIG.LEVELS[nextLevel].threshold;
+        const remaining = nextThreshold - totalRecharge;
+        const progress = Math.min((totalRecharge / nextThreshold) * 100, 100);
+
+        return {
+            currentLevel,
+            displayName: identity.displayName,
+            nextLevel,
+            nextDisplayName: TIER_CONFIG.LEVELS[nextLevel].displayName,
+            nextThreshold,
+            remaining,
+            progress: Math.floor(progress),
+            isMaxLevel: false
         };
     }
 
     /**
-     * 检查冷静期并释放号码
-     * 定时任务调用，将已过冷静期的号码释放回号码池
-     * @returns {number} 释放的号码数量
+     * 获取用户奖池抽成率
+     * 
+     * @param {string} userId - 用户ID
+     * @returns {number} 抽成率 (0.10 或 0.15)
      */
-    async checkCoolingPeriod() {
-        const today = new Date().toISOString().split('T')[0];
-        const coolingNumbers = await Database.findAll('tierNumberPool', { status: 'COOLING' });
-        let releasedCount = 0;
+    async getPoolRate(userId) {
+        const identity = await this.getTierIdentity(userId);
+        if (!identity) return 0.15; // 默认15%
 
-        for (const num of coolingNumbers) {
-            if (num.coolingEndDate && num.coolingEndDate <= today) {
-                // 释放号码
-                await Database.update('tierNumberPool', num.id, {
-                    status: 'FREE',
-                    userId: null,
-                    coolingEndDate: null
-                });
-                console.log(`✅ 号码 ${num.id} 冷静期结束，已释放回号码池`);
-                releasedCount++;
-            }
+        const levelConfig = TIER_CONFIG.LEVELS[identity.level];
+        return levelConfig ? levelConfig.poolRate : 0.15;
+    }
+
+    /**
+     * 处理VIP检查（保持原有逻辑）
+     * 
+     * @param {string} userId - 用户ID
+     * @param {string} today - 日期
+     */
+    async processVIPCheck(userId, today) {
+        const identity = await this.getTierIdentity(userId);
+        if (!identity) return;
+
+        // 如果已经是永久VIP，跳过
+        if (identity.isVIP && TIER_CONFIG.VIP.validForever) {
+            return;
         }
-        return releasedCount;
+
+        // 检查今日充值是否达标
+        const recharges = await Database.findAll('recharges', {
+            userId,
+            status: 'APPROVED'
+        });
+
+        const todayRecharge = recharges
+            .filter(r => r.createdAt.startsWith(today))
+            .reduce((sum, r) => sum + r.amount, 0);
+
+        if (todayRecharge >= TIER_CONFIG.VIP.dailyThreshold) {
+            // 更新连续天数
+            const lastDate = identity.lastVIPDate;
+            const isConsecutive = lastDate && this.isYesterday(lastDate, today);
+            
+            const newConsecutiveDays = isConsecutive 
+                ? identity.consecutiveVIPDays + 1 
+                : 1;
+
+            const updates = {
+                consecutiveVIPDays: newConsecutiveDays,
+                lastVIPDate: today
+            };
+
+            // 达到连续天数，升级为VIP
+            if (newConsecutiveDays >= TIER_CONFIG.VIP.consecutiveDays) {
+                updates.isVIP = true;
+                console.log(`[VIP] User ${userId} became VIP!`);
+            }
+
+            await Database.update('tierIdentities', identity.id, updates);
+        }
     }
 
     /**
-     * 辅助函数：给日期增加天数
-     * @param {string} dateStr - 日期字符串 YYYY-MM-DD
-     * @param {number} days - 增加的天数
-     * @returns {string} 新的日期字符串
+     * 检查日期是否连续
      */
-    addDays(dateStr, days) {
-        const date = new Date(dateStr);
-        date.setDate(date.getDate() + days);
-        return date.toISOString().split('T')[0];
+    isYesterday(lastDate, today) {
+        const last = new Date(lastDate);
+        const now = new Date(today);
+        const diffTime = now - last;
+        const diffDays = diffTime / (1000 * 60 * 60 * 24);
+        return diffDays === 1;
     }
 
     /**
-     * 获取候补队列中的用户
-     * @returns {Array} 候补用户列表
+     * 获取升级提示消息
+     * 
+     * @param {number} level - 等级
+     * @returns {string} 提示消息
      */
-    async getWaitlistUsers() {
-        // 获取所有已注册但没有等级身份的用户
-        const allUsers = await Database.getAll('users');
-        const tierUsers = await Database.getAll('tierIdentities');
-        const tierUserIds = new Set(tierUsers.map(t => t.userId));
-        
-        return allUsers.filter(u => !tierUserIds.has(u.id));
+    getUpgradeMessage(level) {
+        return TIER_CONFIG.UPGRADE_MESSAGES[level] || '🎉 恭喜升级！';
     }
 }
 
