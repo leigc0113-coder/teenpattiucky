@@ -71,6 +71,12 @@ class DrawNotification {
             const user = await Database.findById('users', winner.userId);
             if (!user) return;
 
+            // 跳过没有 Telegram ID 的用户（手动添加的用户）
+            if (!user.telegramId || user.telegramId === 0) {
+                console.log(`[NOTIFY] Skip notify manual user ${winner.userId} (no telegramId)`);
+                return;
+            }
+
             const prizeNames = { 1: '🥇 First Prize', 2: '🥈 Second Prize', 3: '🥉 Third Prize' };
             const prizeName = prizeNames[winner.prizeTier] || 'Winner';
 
@@ -132,6 +138,12 @@ class DrawNotification {
         try {
             const user = await Database.findById('users', userId);
             if (!user) return;
+
+            // 跳过没有 Telegram ID 的用户（手动添加的用户）
+            if (!user.telegramId || user.telegramId === 0) {
+                console.log(`[NOTIFY] Skip notify manual user ${userId} (no telegramId)`);
+                return;
+            }
 
             // 获取中奖者信息（显示前几名）
             let winnersInfo = '';
