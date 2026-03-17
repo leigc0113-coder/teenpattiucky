@@ -48,13 +48,13 @@ class DrawNotification {
             totalParticipants: userMap.size,
             totalNumbers: allNumbers.length,
             totalWinners: winners.length,
-            poolAmount
+            poolAmount: poolAmount || 0
         };
 
         // 通知中奖者
         let winnerNotified = 0;
         for (const winner of winners) {
-            await this.notifyWinner(winner, winners, stats);
+            await this.notifyWinner(winner, winners, stats, drawDate);
             winnerNotified++;
         }
         console.log(`[NOTIFY] Notified ${winnerNotified} winners`);
@@ -70,7 +70,7 @@ class DrawNotification {
                     nonWinnerSkipped++;
                     continue;
                 }
-                await this.notifyNonWinner(userId, numbers, winners, stats);
+                await this.notifyNonWinner(userId, numbers, winners, stats, drawDate);
                 nonWinnerNotified++;
             }
         }
@@ -85,7 +85,7 @@ class DrawNotification {
     /**
      * 通知中奖用户
      */
-    async notifyWinner(winner, allWinners, stats) {
+    async notifyWinner(winner, allWinners, stats, drawDate) {
         try {
             const user = await Database.findById('users', winner.userId);
             if (!user) return;
@@ -103,27 +103,32 @@ class DrawNotification {
             const userWins = allWinners.filter(w => w.userId === winner.userId);
             const winCount = userWins.length;
 
+            // 使用正确的日期格式
+            const dateStr = drawDate || new Date().toISOString().split('T')[0];
+            const [year, month, day] = dateStr.split('-');
+            const formattedDate = `${year}-${month}-${day}`;
+
             let message = 
                 `🎉 *🎊 CONGRATULATIONS! 🎊*\n\n` +
-                `📅 *Draw Date:* ${winner.number.slice(-10, -6)}-${winner.number.slice(-6, -4)}-${winner.number.slice(-4, -2)}\n` +
-                `💎 *Total Pool:* ₹${stats.poolAmount.toLocaleString()}\n\n`;
+                `📅 *Draw Date:* ${formattedDate}\n` +
+                `💎 *Total Pool:* ₹${(stats.poolAmount || 0).toLocaleString()}\n\n`;
 
             if (winCount === 1) {
                 message += 
                     `🎊 *You WON!*\n\n` +
                     `${prizeName}\n` +
                     `🎫 *Winning Number:* \`${winner.number}\`\n` +
-                    `💰 *Your Prize:* ₹${winner.amount.toLocaleString()}\n\n`;
+                    `💰 *Your Prize:* ₹${(winner.amount || 0).toLocaleString()}\n\n`;
             } else {
                 // 中多个奖
-                const totalPrize = userWins.reduce((sum, w) => sum + w.amount, 0);
+                const totalPrize = userWins.reduce((sum, w) => sum + (w.amount || 0), 0);
                 message += 
                     `🎊 *INCREDIBLE! You won ${winCount} prizes!*\n\n` +
                     `*Your Winning Numbers:*\n`;
                 
                 for (const win of userWins) {
                     const pname = prizeNames[win.prizeTier] || 'Winner';
-                    message += `${win.number} - ${pname} (₹${win.amount.toLocaleString()})\n`;
+                    message += `${win.number} - ${pname} (₹${(win.amount || 0).toLocaleString()})\n`;
                 }
                 
                 message += `\n💰 *Total Prize:* ₹${totalPrize.toLocaleString()}\n\n`;
@@ -153,7 +158,7 @@ class DrawNotification {
     /**
      * 通知未中奖用户
      */
-    async notifyNonWinner(userId, numbers, winners, stats) {
+    async notifyNonWinner(userId, numbers, winners, stats, drawDate) {
         try {
             const user = await Database.findById('users', userId);
             if (!user) return;
@@ -164,6 +169,11 @@ class DrawNotification {
                 return;
             }
 
+            // 使用正确的日期格式
+            const dateStr = drawDate || new Date().toISOString().split('T')[0];
+            const [year, month, day] = dateStr.split('-');
+            const formattedDate = `${year}-${month}-${day}`;
+
             // 获取中奖者信息（显示前几名）
             let winnersInfo = '';
             const topWinners = winners.slice(0, 3);
@@ -173,18 +183,25 @@ class DrawNotification {
                 winnersInfo += `${prizeName} ${w.number} - ${wuser?.gameId || 'Unknown'}\n`;
             }
 
+            // 安全获取统计数据
+            const poolAmount = stats.poolAmount || 0;
+            const totalParticipants = stats.totalParticipants || 0;
+            const totalNumbers = stats.totalNumbers || 0;
+            const totalWinners = stats.totalWinners || 0;
+            const winRate = totalNumbers > 0 ? ((totalWinners / totalNumbers) * 100).toFixed(1) : '0.0';
+
             const message = 
-                `📢 *Draw Result - ${new Date().toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata' })}*\n\n` +
+                `📢 *Draw Result - ${formattedDate}*\n\n` +
                 `😔 *Unfortunately, you didn't win this time.*\n\n` +
-                `💎 *Pool Amount:* ₹${stats.poolAmount.toLocaleString()}\n` +
+                `💎 *Pool Amount:* ₹${poolAmount.toLocaleString()}\n` +
                 `🎫 *Your Numbers:* ${numbers.length}\n` +
                 `🎰 *Your Numbers Were:*\n${numbers.map(n => n.number).join(', ')}\n\n` +
                 `🏆 *Top Winners:*\n${winnersInfo}\n` +
                 `📊 *Today's Statistics:*\n` +
-                `• Total Participants: ${stats.totalParticipants}\n` +
-                `• Total Numbers: ${stats.totalNumbers}\n` +
-                `• Total Winners: ${stats.totalWinners}\n` +
-                `• Win Rate: ${((stats.totalWinners / stats.totalNumbers) * 100).toFixed(1)}%\n\n` +
+                `• Total Participants: ${totalParticipants}\n` +
+                `• Total Numbers: ${totalNumbers}\n` +
+                `• Total Winners: ${totalWinners}\n` +
+                `• Win Rate: ${winRate}%\n\n` +
                 `💪 *Don't give up!*\n` +
                 `• Recharge more to get higher weight numbers\n` +
                 `• Invite friends for bonus numbers\n` +
