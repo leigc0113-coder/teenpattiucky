@@ -11,16 +11,9 @@
 
 const MenuContent = {
     
-    // 检测用户语言
+    // 检测用户语言 - 强制返回英文
     getUserLanguage(user) {
-        if (!user || !user.language_code) return 'en';
-        
-        // 中文语言码
-        if (user.language_code.startsWith('zh')) {
-            return 'zh';
-        }
-        
-        // 默认英文
+        // 强制使用英文，忽略用户语言设置
         return 'en';
     },
 
