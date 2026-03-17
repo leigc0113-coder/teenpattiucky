@@ -20,14 +20,13 @@ module.exports = {
     // ==================== 私域流量配置 ====================
     
     /**
-     * 官方频道ID（数字格式，用于API调用）
-     * 从环境变量读取，默认使用示例值
+     * 官方频道ID（数字格式）
+     * 使用环境变量或默认值
      */
-    CHANNEL_ID: process.env.CHANNEL_ID || '@telltest222',
+    CHANNEL_ID: process.env.CHANNEL_ID || '-1003881508220',
     
     /**
-     * 官方频道用户名（@格式，用于显示和跳转）
-     * 从环境变量读取，方便随时更换
+     * 官方频道用户名
      */
     CHANNEL_USERNAME: process.env.CHANNEL_USERNAME || '@telltest222',
     
