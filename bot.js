@@ -1669,17 +1669,10 @@ bot.onText(/Recharge/, async (msg) => {
 
         await bot.sendMessage(chatId,
             '💰 *Recharge to Get More Numbers!*\n\n' +
-            `🏆 Current Tier: ${tierDisplay}\n\n` +
-            '💰 *₹100* → 2 Silver numbers\n' +
-            '💰 *₹300* → 3 Silver numbers\n' +
-            '💰 *₹500* → 4 Gold numbers\n' +
-            '💰 *₹1,000* → 5 Gold numbers\n' +
-            '💰 *₹2,000* → 6 Diamond numbers\n' +
-            '💰 *₹3,000* → 7 Diamond numbers\n' +
-            '💰 *₹5,000* → 8 Crown numbers\n' +
-            '💰 *₹10,000* → 10 Crown numbers\n' +
-            '💰 *₹20,000* → 12 VIP numbers\n\n' +
-            '👇 *Select recharge amount:*',
+            'Recharge ₹100-₹20,000 to get 2-12 lottery numbers.\n' +
+            '✅ You can recharge multiple times per day!\n' +
+            '✅ Numbers are valid for today\'s draw only.\n\n' +
+            'Select your recharge amount:',
             {
                 parse_mode: 'Markdown',
                 reply_markup: {
