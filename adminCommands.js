@@ -159,28 +159,28 @@ class AdminCommands {
     // ==================== 管理员面板 ====================
     async showAdminPanel(chatId) {
         const text = 
-            '👨‍💼 *Admin Panel*\n' +
+            '👨‍💼 *管理员面板*\n' +
             '━━━━━━━━━━━━━━━━━━━\n\n' +
-            'Select an action:';
+            '请选择一个操作：';
 
         const buttons = {
             reply_markup: {
                 inline_keyboard: [
                     [
-                        { text: '📋 Pending Review', callback_data: 'admin_pending' },
-                        { text: '📊 Today Stats', callback_data: 'admin_stats' }
+                        { text: '📋 待审核列表', callback_data: 'admin_pending' },
+                        { text: '📊 今日统计', callback_data: 'admin_stats' }
                     ],
                     [
-                        { text: '👥 Users', callback_data: 'admin_users' },
-                        { text: '🎰 Force Draw', callback_data: 'admin_draw' }
+                        { text: '👥 用户列表', callback_data: 'admin_users' },
+                        { text: '🎰 立即开奖', callback_data: 'admin_draw' }
                     ],
                     [
-                        { text: '📢 Broadcast', callback_data: 'admin_broadcast' },
-                        { text: '⚙️ Auto Settings', callback_data: 'admin_auto' }
+                        { text: '📢 广播消息', callback_data: 'admin_broadcast' },
+                        { text: '⚙️ 自动设置', callback_data: 'admin_auto' }
                     ],
                     [
-                        { text: '✅ Approve All FREE', callback_data: 'admin_approve_all_free' },
-                        { text: '❌ Reject Old (>24h)', callback_data: 'admin_reject_all_old' }
+                        { text: '✅ 批准所有免费', callback_data: 'admin_approve_all_free' },
+                        { text: '❌ 拒绝超24小时', callback_data: 'admin_reject_all_old' }
                     ]
                 ]
             }
