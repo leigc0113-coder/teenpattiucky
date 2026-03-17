@@ -77,6 +77,16 @@ class AdminCommands {
             await this.showAutoSettings(chatId);
         });
 
+        // /drawhistory - 历史开奖记录
+        this.bot.onText(/\/drawhistory/, async (msg) => {
+            const chatId = msg.chat.id;
+            const userId = msg.from.id;
+
+            if (!this.isAdmin(userId)) return;
+
+            await this.showDrawHistory(chatId);
+        });
+
         // 处理批量添加用户的Game ID输入
         this.bot.on('message', async (msg) => {
             const chatId = msg.chat.id;
@@ -461,6 +471,60 @@ class AdminCommands {
                 ]
             }
         });
+    }
+
+    // ==================== 历史开奖记录 ====================
+    async showDrawHistory(chatId) {
+        try {
+            const historyService = require('./historyService');
+            const drawHistory = await historyService.getDrawHistory(7);
+
+            if (drawHistory.length === 0) {
+                await this.bot.sendMessage(chatId, 
+                    '📊 *历史开奖记录*\n' +
+                    '━━━━━━━━━━━━━━━━━━━\n\n' +
+                    '暂无开奖记录',
+                    { parse_mode: 'Markdown' }
+                );
+                return;
+            }
+
+            let message = '📊 *历史开奖记录* (最近7天)\n';
+            message += '━━━━━━━━━━━━━━━━━━━\n\n';
+
+            for (const draw of drawHistory) {
+                message += `📅 *${draw.date}*\n`;
+                message += `💰 奖池: ₹${(draw.poolAmount || 0).toLocaleString()}\n`;
+                message += `👥 参与人数: ${draw.participantCount || 0}\n`;
+                
+                if (draw.winners && draw.winners.length > 0) {
+                    message += '🏆 中奖者:\n';
+                    for (const winner of draw.winners.slice(0, 3)) {
+                        const tierEmoji = winner.prizeTier === 1 ? '🥇' : winner.prizeTier === 2 ? '🥈' : '🥉';
+                        message += `  ${tierEmoji} ${winner.number} - ₹${(winner.amount || 0).toLocaleString()}\n`;
+                    }
+                    if (draw.winners.length > 3) {
+                        message += `  ... 还有 ${draw.winners.length - 3} 位\n`;
+                    }
+                }
+                message += '\n';
+            }
+
+            message += '━━━━━━━━━━━━━━━━━━━';
+
+            await this.bot.sendMessage(chatId, message, {
+                parse_mode: 'Markdown',
+                reply_markup: {
+                    inline_keyboard: [
+                        [{ text: '🔙 返回', callback_data: 'admin_back' }]
+                    ]
+                }
+            });
+
+        } catch (error) {
+            console.error('[ADMIN] Draw history error:', error);
+            await this.bot.sendMessage(chatId, '❌ 获取开奖历史失败: ' + error.message);
+        }
     }
 
     // ==================== 批量操作 ====================
