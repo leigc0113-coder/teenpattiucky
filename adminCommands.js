@@ -98,12 +98,6 @@ class AdminCommands {
                 return;
             }
 
-            if (data === 'admin_users') {
-                await this.showUsersList(chatId);
-                await this.answerQuery(query);
-                return;
-            }
-
             if (data === 'admin_draw') {
                 await this.confirmDraw(chatId);
                 await this.answerQuery(query);
@@ -171,11 +165,10 @@ class AdminCommands {
                         { text: '📊 今日统计', callback_data: 'admin_stats' }
                     ],
                     [
-                        { text: '👥 用户列表', callback_data: 'admin_users' },
-                        { text: '🎰 立即开奖', callback_data: 'admin_draw' }
+                        { text: '🎰 立即开奖', callback_data: 'admin_draw' },
+                        { text: '📢 广播消息', callback_data: 'admin_broadcast' }
                     ],
                     [
-                        { text: '📢 广播消息', callback_data: 'admin_broadcast' },
                         { text: '⚙️ 自动设置', callback_data: 'admin_auto' }
                     ],
                     [
@@ -241,7 +234,7 @@ class AdminCommands {
         });
     }
 
-    // ==================== 今日统计 ====================
+    // ==================== 今日统计（包含频道/群组数据）====================
     async showStats(chatId) {
         const today = new Date().toISOString().split('T')[0];
         
@@ -254,13 +247,37 @@ class AdminCommands {
         const todayRecharges = recharges.filter(r => r.createdAt.startsWith(today));
         const todayAmount = todayRecharges.reduce((sum, r) => sum + r.amount, 0);
         
+        // 获取频道和群组人数
+        let channelCount = 0;
+        let groupCount = 0;
+        
+        try {
+            const integration = require('./integration');
+            const channelStats = await integration.getChannelStats();
+            channelCount = channelStats?.memberCount || 0;
+        } catch (e) {
+            console.log('[STATS] Channel stats error:', e.message);
+        }
+        
+        try {
+            const integration = require('./integration');
+            const groupStats = await integration.getGroupStats();
+            groupCount = groupStats?.memberCount || 0;
+        } catch (e) {
+            console.log('[STATS] Group stats error:', e.message);
+        }
+        
         const text = 
             '📊 *今日统计*\n' +
             '━━━━━━━━━━━━━━━━━━━\n\n' +
+            '*📱 用户数据*\n' +
             `👥 总用户数: ${users.length}\n` +
             `💰 今日充值: ₹${todayAmount.toLocaleString()}\n` +
             `📊 今日批准: ${todayRecharges.length}\n` +
             `💎 奖池金额: ₹${(pool?.finalAmount || 0).toLocaleString()}\n\n` +
+            '*📢 社群数据*\n' +
+            `📣 频道人数: ${channelCount.toLocaleString()}\n` +
+            `💬 群组人数: ${groupCount.toLocaleString()}\n\n` +
             `⏰ 开奖时间: 21:00 IST`;
 
         await this.bot.sendMessage(chatId, text, {
