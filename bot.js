@@ -1890,20 +1890,15 @@ bot.onText(/\/pool|Current Pool/, async (msg) => {
     }
 });
 
-// Help - 使用新多语言菜单系统
+// Help - 显示英文帮助菜单
 bot.onText(/\/help|❓ Help/, async (msg) => {
     const chatId = msg.chat.id;
-    const user = msg.from;
     
-    console.log(`[HELP DEBUG] User ${user.id} language_code:`, user.language_code);
-    
-    // 使用新的多语言菜单系统
+    // 使用英文菜单系统
     if (menuRouter) {
-        const lang = menuRouter.getUserLanguage(user);
-        console.log(`[HELP DEBUG] Detected language:`, lang);
-        await menuRouter.showMainMenu(chatId, null, lang);
+        await menuRouter.showMainMenu(chatId, null, 'en');
     } else {
-        // 降级方案
+        // 备用方案
         const helpText =
             '📖 *Help Center*\n' +
             '━━━━━━━━━━━━━━━━\n\n' +

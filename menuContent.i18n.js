@@ -13,7 +13,7 @@ const MenuContent = {
     
     // 检测用户语言 - 强制返回英文
     getUserLanguage(user) {
-        // 强制使用英文，忽略用户语言设置
+        // 强制使用英文
         return 'en';
     },
 
