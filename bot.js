@@ -28,9 +28,9 @@ const DrawService = require('./drawService');
 const InviteService = require('./inviteService');
 const RechargeService = require('./rechargeService');
 
-// 引入新菜单系统
-const MenuRouter = require('./menuRouter');
-const MenuContent = require('./menuContent');
+// 引入新菜单系统（多语言版）
+const MenuRouter = require('./menuRouter.i18n');
+const MenuContent = require('./menuContent.i18n');
 
 // 引入私域联动系统
 const ChannelGroupBotIntegration = require('./integration');
@@ -267,7 +267,7 @@ bot.onText(/\/start(?:\s+(.+))?/, async (msg, match) => {
 
 // ==================== Callback Handlers ====================
 
-// 新菜单系统回调处理器（优先级最高）
+// 新多语言菜单系统回调处理器（优先级最高）
 bot.on('callback_query', async (query) => {
     const data = query.data;
     
@@ -1898,19 +1898,19 @@ bot.onText(/\/pool|Current Pool/, async (msg) => {
     }
 });
 
-// Help - 使用新菜单系统
+// Help - 使用新多语言菜单系统
 bot.onText(/\/help|❓ Help/, async (msg) => {
     const chatId = msg.chat.id;
-
-    // 使用新的菜单系统显示帮助中心
+    
+    // 使用新的多语言菜单系统
     if (menuRouter) {
-        await menuRouter.showMainMenu(chatId);
+        await menuRouter.showMainMenu(chatId, null, menuRouter.getUserLanguage(msg.from));
     } else {
-        // 降级方案：使用旧的菜单
+        // 降级方案
         const helpText =
             '📖 *Help Center*\n' +
             '━━━━━━━━━━━━━━━━\n\n' +
-            'Select a topic below to learn more:';
+            'Select a topic:';
 
         await bot.sendMessage(chatId, helpText, {
             parse_mode: 'Markdown',
