@@ -61,13 +61,13 @@ Database.init().then(async () => {
     menuRouter = new MenuRouter(bot, UserService, TierService, VIPService);
     console.log('✅ Menu router initialized');
     
-    // 启动时检查并释放冷静期结束的号码
-    try {
-        const releasedCount = await TierService.checkCoolingPeriod();
-        console.log(`✅ Released ${releasedCount} tier numbers from cooling period`);
-    } catch (e) {
-        console.error('❌ Failed to check cooling period:', e);
-    }
+    // 启动时检查并释放冷静期结束的号码（暂时禁用）
+    // try {
+    //     const releasedCount = await TierService.checkCoolingPeriod();
+    //     console.log(`✅ Released ${releasedCount} tier numbers from cooling period`);
+    // } catch (e) {
+    //     console.error('❌ Failed to check cooling period:', e);
+    // }
 }).catch(err => {
     console.error('❌ Database init failed:', err);
 });
