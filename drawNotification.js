@@ -19,11 +19,9 @@ class DrawNotification {
     async sendDrawResults(drawDate, winners, poolAmount) {
         console.log(`[NOTIFY] Sending draw results for ${drawDate}`);
 
-        // 获取所有参与者（首先查询指定日期）
-        let allNumbers = await Database.findAll('lotteryNumbers', {
-            date: drawDate,
-            status: { $in: ['VALID', 'WON', 'USED'] }
-        });
+        // 获取所有参与者（首先查询指定日期）- 不使用 $in 操作符
+        let allNumbers = await Database.getAll('lotteryNumbers');
+        allNumbers = allNumbers.filter(n => n.date === drawDate && ['VALID', 'WON', 'USED'].includes(n.status));
 
         // 如果没有找到，尝试查询前一天
         if (!allNumbers || allNumbers.length === 0) {
@@ -33,10 +31,8 @@ class DrawNotification {
             
             console.log(`[NOTIFY] No numbers for ${drawDate}, trying ${yesterdayStr}`);
             
-            allNumbers = await Database.findAll('lotteryNumbers', {
-                date: yesterdayStr,
-                status: { $in: ['VALID', 'WON', 'USED'] }
-            });
+            allNumbers = await Database.getAll('lotteryNumbers');
+            allNumbers = allNumbers.filter(n => n.date === yesterdayStr && ['VALID', 'WON', 'USED'].includes(n.status));
         }
 
         console.log(`[NOTIFY] Found ${allNumbers?.length || 0} total numbers for date ${drawDate}`);

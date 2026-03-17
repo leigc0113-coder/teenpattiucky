@@ -21,10 +21,8 @@ class DrawService {
         }
 
         // 首先查询指定日期的号码
-        let numbers = await Database.findAll('lotteryNumbers', {
-            date: drawDate,
-            status: 'VALID'
-        });
+        let allNumbers = await Database.getAll('lotteryNumbers');
+        let numbers = allNumbers.filter(n => n.date === drawDate && n.status === 'VALID');
 
         // 如果没有找到，尝试查询前一天（处理时区问题）
         if (numbers.length === 0) {
@@ -34,10 +32,7 @@ class DrawService {
             
             console.log(`[DRAW] No numbers for ${drawDate}, trying ${yesterdayStr}`);
             
-            numbers = await Database.findAll('lotteryNumbers', {
-                date: yesterdayStr,
-                status: 'VALID'
-            });
+            numbers = allNumbers.filter(n => n.date === yesterdayStr && n.status === 'VALID');
             
             // 如果找到了昨天的号码，更新日期用于后续处理
             if (numbers.length > 0) {
