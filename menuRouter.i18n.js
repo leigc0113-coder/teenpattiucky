@@ -33,7 +33,12 @@ class MenuRouter {
         const userId = user.id;
         const data = query.data;
         const messageId = query.message.message_id;
+        
+        // 调试：打印用户语言信息
+        console.log(`[MENU DEBUG] User ${userId} language_code:`, user.language_code);
+        
         const lang = this.getUserLanguage(user);
+        console.log(`[MENU DEBUG] Detected language:`, lang);
 
         console.log(`[MENU] User ${userId} (${lang}): ${data}`);
 

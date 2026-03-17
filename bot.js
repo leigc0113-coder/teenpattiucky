@@ -1901,10 +1901,15 @@ bot.onText(/\/pool|Current Pool/, async (msg) => {
 // Help - 使用新多语言菜单系统
 bot.onText(/\/help|❓ Help/, async (msg) => {
     const chatId = msg.chat.id;
+    const user = msg.from;
+    
+    console.log(`[HELP DEBUG] User ${user.id} language_code:`, user.language_code);
     
     // 使用新的多语言菜单系统
     if (menuRouter) {
-        await menuRouter.showMainMenu(chatId, null, menuRouter.getUserLanguage(msg.from));
+        const lang = menuRouter.getUserLanguage(user);
+        console.log(`[HELP DEBUG] Detected language:`, lang);
+        await menuRouter.showMainMenu(chatId, null, lang);
     } else {
         // 降级方案
         const helpText =
