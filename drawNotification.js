@@ -19,17 +19,35 @@ class DrawNotification {
     async sendDrawResults(drawDate, winners, poolAmount) {
         console.log(`[NOTIFY] Sending draw results for ${drawDate}`);
 
-        // 获取所有参与者
-        const allNumbers = await Database.findAll('lotteryNumbers', {
+        // 获取所有参与者（首先查询指定日期）
+        let allNumbers = await Database.findAll('lotteryNumbers', {
             date: drawDate,
             status: { $in: ['VALID', 'WON', 'USED'] }
         });
 
-        console.log(`[NOTIFY] Found ${allNumbers.length} total numbers`);
+        // 如果没有找到，尝试查询前一天
+        if (!allNumbers || allNumbers.length === 0) {
+            const yesterday = new Date(drawDate);
+            yesterday.setDate(yesterday.getDate() - 1);
+            const yesterdayStr = yesterday.toISOString().split('T')[0];
+            
+            console.log(`[NOTIFY] No numbers for ${drawDate}, trying ${yesterdayStr}`);
+            
+            allNumbers = await Database.findAll('lotteryNumbers', {
+                date: yesterdayStr,
+                status: { $in: ['VALID', 'WON', 'USED'] }
+            });
+        }
+
+        console.log(`[NOTIFY] Found ${allNumbers?.length || 0} total numbers for date ${drawDate}`);
+        
+        if (!allNumbers || allNumbers.length === 0) {
+            console.log(`[NOTIFY] WARNING: No numbers found for date ${drawDate} or previous day`);
+        }
 
         // 按用户分组
         const userMap = new Map();
-        for (const num of allNumbers) {
+        for (const num of allNumbers || []) {
             if (!userMap.has(num.userId)) {
                 userMap.set(num.userId, []);
             }
@@ -46,10 +64,12 @@ class DrawNotification {
         // 准备统计数据
         const stats = {
             totalParticipants: userMap.size,
-            totalNumbers: allNumbers.length,
+            totalNumbers: allNumbers?.length || 0,
             totalWinners: winners.length,
             poolAmount: poolAmount || 0
         };
+        
+        console.log(`[NOTIFY] Stats:`, stats);
 
         // 通知中奖者
         let winnerNotified = 0;

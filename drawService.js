@@ -20,10 +20,30 @@ class DrawService {
             return { success: false, message: 'POOL_NOT_LOCKED' };
         }
 
-        const numbers = await Database.findAll('lotteryNumbers', {
+        // 首先查询指定日期的号码
+        let numbers = await Database.findAll('lotteryNumbers', {
             date: drawDate,
             status: 'VALID'
         });
+
+        // 如果没有找到，尝试查询前一天（处理时区问题）
+        if (numbers.length === 0) {
+            const yesterday = new Date(drawDate);
+            yesterday.setDate(yesterday.getDate() - 1);
+            const yesterdayStr = yesterday.toISOString().split('T')[0];
+            
+            console.log(`[DRAW] No numbers for ${drawDate}, trying ${yesterdayStr}`);
+            
+            numbers = await Database.findAll('lotteryNumbers', {
+                date: yesterdayStr,
+                status: 'VALID'
+            });
+            
+            // 如果找到了昨天的号码，更新日期用于后续处理
+            if (numbers.length > 0) {
+                console.log(`[DRAW] Found ${numbers.length} numbers from ${yesterdayStr}`);
+            }
+        }
 
         if (numbers.length < 10) {
             return { success: false, message: 'NOT_ENOUGH_PARTICIPANTS' };
