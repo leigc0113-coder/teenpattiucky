@@ -152,7 +152,8 @@ function getMainMenu() {
             keyboard: [
                 ['My Account', 'Recharge'],
                 ['Daily Check-in', 'Invite Friends'],
-                ['Current Pool', '❓ Help']
+                ['Current Pool', '❓ Help'],
+                ['📜 My History']
             ],
             resize_keyboard: true
         }
@@ -1586,8 +1587,8 @@ bot.onText(/\/myaccount|My Account/, async (msg) => {
     }
 });
 
-// /history - 个人中奖历史
-bot.onText(/\/history/, async (msg) => {
+// /history 或 📜 My History 按钮 - 个人中奖历史
+bot.onText(/\/history|📜 My History/, async (msg) => {
     const chatId = msg.chat.id;
     const userId = msg.from.id;
 

@@ -161,6 +161,13 @@ class AdminCommands {
                 return;
             }
 
+            // 开奖历史按钮
+            if (data === 'admin_draw_history') {
+                await this.showDrawHistory(chatId);
+                await this.answerQuery(query);
+                return;
+            }
+
             // 批量添加用户
             if (data === 'admin_batch_add') {
                 await this.startBatchAdd(chatId, userId);
@@ -272,11 +279,16 @@ class AdminCommands {
                         { text: '🎰 立即开奖', callback_data: 'admin_draw' }
                     ],
                     [
-                        { text: '📢 广播消息', callback_data: 'admin_broadcast' },
-                        { text: '⚙️ 自动设置', callback_data: 'admin_auto' }
+                        { text: '📜 开奖历史', callback_data: 'admin_draw_history' },
+                        { text: '📢 广播消息', callback_data: 'admin_broadcast' }
                     ],
                     [
                         { text: '✅ 批准所有免费', callback_data: 'admin_approve_all_free' },
+                        { text: '❌ 拒绝超时申请', callback_data: 'admin_reject_all_old' }
+                    ]
+                ]
+            }
+        };
                         { text: '❌ 拒绝超24小时', callback_data: 'admin_reject_all_old' }
                     ]
                 ]
