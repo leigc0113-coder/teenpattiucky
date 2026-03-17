@@ -2186,3 +2186,19 @@ console.log('🔗 Channel Integration: ' + (CONFIG.CHANNEL_ID ? 'Enabled' : 'Dis
 console.log('💬 Group Integration: ' + (CONFIG.GROUP_ID ? 'Enabled' : 'Disabled'));
 console.log('🔧 Admin commands loaded. Type /admin for panel');
 console.log('⚠️  Manual number management loaded. Type /adminhelp for help');
+
+// ==================== AI 自动发帖系统 ====================
+const AutoPoster = require('./autoPost');
+const autoPoster = new AutoPoster(bot);
+
+// 启动自动发帖（如果配置了频道）
+if (CONFIG.CHANNEL_ID) {
+    autoPoster.startScheduledPosts();
+    console.log('🤖 AI Auto-Posting: ENABLED');
+    console.log('   Posts per day: 11 (AI generated)');
+} else {
+    console.log('🤖 AI Auto-Posting: DISABLED (no CHANNEL_ID)');
+}
+
+// 导出 autoPoster 供其他地方使用（如开奖后发送中奖结果）
+module.exports.autoPoster = autoPoster;
