@@ -1586,6 +1586,63 @@ bot.onText(/\/myaccount|My Account/, async (msg) => {
     }
 });
 
+// /history - 个人中奖历史
+bot.onText(/\/history/, async (msg) => {
+    const chatId = msg.chat.id;
+    const userId = msg.from.id;
+
+    try {
+        const user = await UserService.getUserByTelegramId(userId);
+        if (!user) {
+            await bot.sendMessage(chatId,
+                '⚠️ Please join first!\nClick "🎮 Join Now" to start.',
+                getMainMenu()
+            );
+            return;
+        }
+
+        const historyService = require('./historyService');
+        const winHistory = await historyService.getUserWinHistory(user.id, 10);
+        const stats = await historyService.getUserStats(user.id);
+
+        let message = '📜 *My Win History*\n';
+        message += '━━━━━━━━━━━━━━━━\n\n';
+
+        // 统计信息
+        message += `🏆 Total Wins: ${stats.totalWins}\n`;
+        message += `💰 Total Prize: ₹${stats.totalPrize.toLocaleString()}\n`;
+        message += `📅 Participation: ${stats.participationDays} days\n`;
+        if (stats.winRate > 0) {
+            message += `📊 Win Rate: ${stats.winRate}%\n`;
+        }
+        message += '\n';
+
+        // 最近中奖记录
+        if (winHistory.length > 0) {
+            message += '*Recent Wins:*\n';
+            for (const win of winHistory.slice(0, 5)) {
+                const tierEmoji = win.prizeTier === 1 ? '🥇' : win.prizeTier === 2 ? '🥈' : '🥉';
+                message += `${tierEmoji} ${win.date} - ₹${win.amount.toLocaleString()} (${win.number})\n`;
+            }
+        } else {
+            message += '😔 No wins yet.\n';
+            message += '💡 Keep trying! More numbers = higher chance!\n';
+        }
+
+        message += '\n━━━━━━━━━━━━━━━━';
+        message += '\n💡 Use /start to get more numbers!';
+
+        await bot.sendMessage(chatId, message, {
+            parse_mode: 'Markdown',
+            ...getMainMenu()
+        });
+
+    } catch (error) {
+        console.error('[HISTORY] Error:', error);
+        await bot.sendMessage(chatId, '❌ Failed to load history');
+    }
+});
+
 // Join Now - Alternative way
 bot.onText(/Join Now/, async (msg) => {
     const chatId = msg.chat.id;
