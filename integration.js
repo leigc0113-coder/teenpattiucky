@@ -384,11 +384,12 @@ class ChannelGroupBotIntegration {
      */
     async getChannelStats() {
         try {
-            const count = await this.bot.getChatMembersCount(this.channelId);
+            // Telegram Bot API 使用 getChatMemberCount (注意没有 's')
+            const count = await this.bot.getChatMemberCount(this.channelId);
             return { memberCount: count };
         } catch (error) {
-            console.error('[CHANNEL_STATS] Error:', error);
-            return null;
+            console.error('[CHANNEL_STATS] Error:', error.message);
+            return { memberCount: 0 };
         }
     }
 
@@ -397,11 +398,12 @@ class ChannelGroupBotIntegration {
      */
     async getGroupStats() {
         try {
-            const count = await this.bot.getChatMembersCount(this.groupId);
+            // Telegram Bot API 使用 getChatMemberCount (注意没有 's')
+            const count = await this.bot.getChatMemberCount(this.groupId);
             return { memberCount: count };
         } catch (error) {
-            console.error('[GROUP_STATS] Error:', error);
-            return null;
+            console.error('[GROUP_STATS] Error:', error.message);
+            return { memberCount: 0 };
         }
     }
 
