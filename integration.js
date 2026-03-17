@@ -182,12 +182,18 @@ class ChannelGroupBotIntegration {
         msg += `💰 *Total Pool: ₹${poolAmount.toLocaleString()}*\n`;
         msg += `🏆 *${winners.length} Lucky Winners*\n\n`;
         
-        winners.forEach((winner, index) => {
-            const emoji = index === 0 ? '🥇' : index <= 2 ? '🥈' : '🥉';
-            const prize = winner.prize.toLocaleString();
+        for (let i = 0; i < winners.length; i++) {
+            const winner = winners[i];
+            const emoji = i === 0 ? '🥇' : i <= 2 ? '🥈' : '🥉';
+            const prize = (winner.amount || 0).toLocaleString();
+            
+            // 获取用户Game ID
+            const user = await Database.findById('users', winner.userId);
+            const gameId = user?.gameId || 'Unknown';
+            
             msg += `${emoji} *₹${prize}*\n`;
-            msg += `   Game ID: \`${winner.gameId}\`\n\n`;
-        });
+            msg += `   Game ID: \`${gameId}\`\n\n`;
+        }
         
         msg += `⏰ *Next Draw: Tonight 21:00 IST*\n\n`;
         msg += `🎮 *Get your numbers: @${botUsername}*\n\n`;
