@@ -284,11 +284,6 @@ class AdminCommands {
                     ],
                     [
                         { text: '✅ 批准所有免费', callback_data: 'admin_approve_all_free' },
-                        { text: '❌ 拒绝超时申请', callback_data: 'admin_reject_all_old' }
-                    ]
-                ]
-            }
-        };
                         { text: '❌ 拒绝超24小时', callback_data: 'admin_reject_all_old' }
                     ]
                 ]
