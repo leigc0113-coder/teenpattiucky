@@ -904,9 +904,9 @@ bot.onText(/^\d{7}$/, async (msg) => {
                     'NEW'
                 );
 
-                // 分配等级身份（免费参与流程）
-                const tierIdentity = await TierService.assignTierNumber(user.id);
-                console.log(`[FREE_ENTRY] Tier assignment for user ${user.id}:`, tierIdentity ? `Success - ${tierIdentity.displayName}` : 'Failed - No available tier');
+                // 创建等级身份（新系统：人人有等级）
+                const tierIdentity = await TierService.createTierIdentity(user.id);
+                console.log(`[FREE_ENTRY] Tier identity created for user ${user.id}: ${tierIdentity.displayName}`);
 
                 // 提交免费申请（金额为0）
                 const recharge = await RechargeService.submitRechargeForReview(
@@ -992,9 +992,11 @@ bot.onText(/^\d{7}$/, async (msg) => {
                     'NEW'
                 );
 
-                // 分配等级身份（充值参与流程）
-                const tierIdentity = await TierService.assignTierNumber(user.id);
-                console.log(`[RECHARGE_ENTRY] Tier assignment for user ${user.id}:`, tierIdentity ? `Success - ${tierIdentity.displayName}` : 'Failed - No available tier');
+                // 创建等级身份（新系统：人人有等级）
+                const tierIdentity = await TierService.createTierIdentity(user.id);
+                console.log(`[RECHARGE_ENTRY] Tier identity created for user ${user.id}: ${tierIdentity.displayName}`);
+
+                // 提交充值审核
                 const recharge = await RechargeService.submitRechargeForReview(
                     user.id,
                     screenshotData.photoFileId,
