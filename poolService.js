@@ -127,30 +127,6 @@ class PoolService {
         return pool;
     }
 
-        pool.baseAmount = base;
-        pool.regularContribution = regularContribution;
-        pool.tierContribution = tierContribution;
-        pool.bonus = bonus;
-        pool.finalAmount = Math.floor(maxPool);
-        pool.participantCount = participantCount;
-        pool.locked = false;
-        pool.createdAt = new Date().toISOString();
-
-        // 保存奖池
-        if (pool.id) {
-            const existing = await Database.findById('pools', pool.id);
-            if (existing) {
-                await Database.update('pools', pool.id, pool);
-            } else {
-                await Database.insert('pools', pool);
-            }
-        } else {
-            await Database.insert('pools', pool);
-        }
-
-        return pool;
-    }
-
     /**
      * 锁定奖池
      * 开奖前调用，锁定后不可修改
