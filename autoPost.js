@@ -16,6 +16,7 @@
 
 const ContentGenerator = require('./contentGenerator');
 const PoolService = require('./poolService');
+const Database = require('./database');
 const CONFIG = require('./config');
 const cron = require('node-cron');
 
