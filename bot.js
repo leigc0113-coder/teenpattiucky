@@ -2143,7 +2143,45 @@ if (CONFIG.CHANNEL_ID) {
     }, { timezone: 'Asia/Kolkata' });
 }
 
-console.log('✅ Bot Ready! Flow: Screenshot → Game ID → Review → Numbers');
+// 每日 21:00 - 自动开奖
+cron.schedule('0 21 * * *', async () => {
+    console.log('[CRON] Auto draw starting at 21:00 IST...');
+    try {
+        // 检查今天是否已经开过奖
+        const today = getTodayIST();
+        const existingPool = await PoolService.getTodayPool();
+        
+        if (existingPool?.locked) {
+            console.log('[CRON] Pool already locked today, skipping draw');
+            return;
+        }
+        
+        // 执行开奖
+        await performDraw();
+        console.log('[CRON] Auto draw completed successfully');
+        
+    } catch (error) {
+        console.error('[CRON] Auto draw failed:', error);
+        // 通知管理员开奖失败
+        for (const adminId of CONFIG.ADMIN_IDS) {
+            try {
+                await bot.sendMessage(adminId, 
+                    `❌ *Auto Draw Failed*\n\n` +
+                    `Error: ${error.message}\n\n` +
+                    `Please check logs and run manual draw if needed.`,
+                    { parse_mode: 'Markdown' }
+                );
+            } catch (e) {
+                console.error('[CRON] Failed to notify admin:', e);
+            }
+        }
+    }
+}, { timezone: 'Asia/Kolkata' });
+
+console.log('✅ Scheduled tasks:');
+console.log('   - 09:00 Morning post');
+console.log('   - 20:30 Draw countdown');
+console.log('   - 21:00 Auto draw ⭐');
 console.log('🔗 Channel Integration: ' + (CONFIG.CHANNEL_ID ? 'Enabled' : 'Disabled'));
 console.log('💬 Group Integration: ' + (CONFIG.GROUP_ID ? 'Enabled' : 'Disabled'));
 console.log('🔧 Admin commands loaded. Type /admin for panel');
