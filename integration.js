@@ -97,60 +97,115 @@ class ChannelGroupBotIntegration {
         const isGroupMember = await this.isGroupMember(userId);
         const botUsername = await this.getBotUsername();
         
-        // 获取今日奖池金额
+        // 获取今日奖池金额 - 新系统：每日最少 ₹2,000，最高 ₹20,000
         const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
-        const isWeekend = [0, 6].includes(new Date().getDay());
-        const poolAmount = isWeekend ? '₹5,000' : '₹2,000';
-        const poolNumber = isWeekend ? '5000' : '2000';
+        const dayOfWeek = new Date().getDay(); // 0=周日, 6=周六
         
-        // 构建吸引人的欢迎消息 - 突出奖金金额
+        // 奖池等级系统
+        let poolAmount, poolNumber, poolLevel, poolEmoji;
+        if (dayOfWeek === 0) {
+            // 周日 - 超级大奖
+            poolAmount = '₹20,000';
+            poolNumber = '20000';
+            poolLevel = 'MEGA JACKPOT';
+            poolEmoji = '🔥🔥🔥';
+        } else if (dayOfWeek === 6) {
+            // 周六 - 周末大奖
+            poolAmount = '₹10,000';
+            poolNumber = '10000';
+            poolLevel = 'WEEKEND SPECIAL';
+            poolEmoji = '🔥🔥';
+        } else if (dayOfWeek === 5) {
+            // 周五 - 预热大奖
+            poolAmount = '₹5,000';
+            poolNumber = '5000';
+            poolLevel = 'FRIDAY FEVER';
+            poolEmoji = '🔥';
+        } else {
+            // 周一至周四 - 标准奖池
+            poolAmount = '₹2,000';
+            poolNumber = '2000';
+            poolLevel = 'DAILY JACKPOT';
+            poolEmoji = '💰';
+        }
+        
+        // 计算奖金分布
+        const firstPrize = Math.floor(parseInt(poolNumber) * 0.5);
+        const secondPrize = Math.floor(parseInt(poolNumber) * 0.3);
+        const thirdPrize = Math.floor(parseInt(poolNumber) * 0.2);
+        
+        // 构建吸引人的欢迎消息 - 突出高额奖金
         let welcomeMsg = 
             '🎰 *Teen Patti Lucky Draw* 🎰\n\n';
         
         // 🔥 超大奖金展示区域
         welcomeMsg += 
-            '╔═══════════════════════╗\n' +
-            '║   💰 *DAILY JACKPOT* 💰   ║\n' +
-            '║                       ║\n' +
-            `║    *₹${poolNumber}*    ║\n` +
-            '║      *CASH PRIZE*     ║\n' +
-            '╚═══════════════════════╝\n\n';
+            '╔════════════════════════╗\n' +
+            `║ ${poolEmoji} *${poolLevel}* ${poolEmoji} ║\n` +
+            '║                        ║\n';
         
-        // 周末双倍提示
-        if (isWeekend) {
+        // 根据金额大小调整显示
+        if (parseInt(poolNumber) >= 10000) {
+            welcomeMsg += `║   *${poolAmount}*       ║\n`;
+        } else {
+            welcomeMsg += `║   *${poolAmount}*         ║\n`;
+        }
+        
+        welcomeMsg += 
+            '║   *CASH PRIZE*         ║\n' +
+            '╚════════════════════════╝\n\n';
+        
+        // 奖池等级说明
+        if (dayOfWeek === 0) {
             welcomeMsg += 
-                '🎉 *WEEKEND DOUBLE PRIZE!* 🎉\n' +
-                '🔥 Regular day: ₹2,000\n' +
-                '⚡ Weekend bonus: ₹5,000\n\n';
+                '🎉 *SUPER SUNDAY - MEGA PRIZE!* 🎉\n' +
+                '🔥 10x the regular prize pool!\n' +
+                '⚡ Today only: ₹20,000!\n\n';
+        } else if (dayOfWeek === 6) {
+            welcomeMsg += 
+                '🎉 *WEEKEND SPECIAL!* 🎉\n' +
+                '🔥 5x the regular prize pool!\n' +
+                '⚡ Saturday bonus: ₹10,000!\n\n';
+        } else if (dayOfWeek === 5) {
+            welcomeMsg += 
+                '🎉 *FRIDAY FEVER!* 🎉\n' +
+                '🔥 2.5x the regular prize pool!\n' +
+                '⚡ Weekend warmup: ₹5,000!\n\n';
         }
         
         // 奖金分布 - 让用户看到具体能赢多少
         welcomeMsg += 
             '🏆 *PRIZE BREAKDOWN:*\n' +
-            '├─ 🥇 *1st Prize:* ₹' + (isWeekend ? '2,500' : '1,000') + ' (50%)\n' +
-            '├─ 🥈 *2nd Prize:* ₹' + (isWeekend ? '1,500' : '600') + ' (30%)\n' +
-            '└─ 🥉 *3rd Prize:* ₹' + (isWeekend ? '1,000' : '400') + ' (20%)\n\n';
+            `├─ 🥇 *1st Prize:* ₹${firstPrize.toLocaleString()} (50%)\n` +
+            `├─ 🥈 *2nd Prize:* ₹${secondPrize.toLocaleString()} (30%)\n` +
+            `└─ 🥉 *3rd Prize:* ₹${thirdPrize.toLocaleString()} (20%)\n\n`;
         
-        // 开奖时间倒计时
+        // 累计金额展示
         welcomeMsg += 
-            '⏰ *NEXT DRAW:* 21:00 IST\n' +
-            '📅 *Daily Draws - 365 Days/Year*\n\n';
+            '📊 *THIS WEEK\'S TOTAL:*\n' +
+            '• Mon-Thu: ₹2,000/day (₹8,000)\n' +
+            '• Friday: ₹5,000\n' +
+            '• Saturday: ₹10,000\n' +
+            '• Sunday: ₹20,000\n' +
+            '*Weekly Total: ₹43,000!*\n\n';
         
-        // 你能买什么 - 增加真实感
+        // 你能买什么 - 根据奖池金额动态计算
+        const meals = Math.floor(parseInt(poolNumber) / 200);
         welcomeMsg += 
-            '💡 *What can you buy with ₹' + poolNumber + '?*\n' +
-            '• 🍔 ' + (isWeekend ? '25' : '10') + ' McDonald\'s meals\n' +
-            '• 📱 ' + (isWeekend ? '2 months' : '1 month') + ' mobile recharge\n' +
-            '• 🎮 Premium game credits\n' +
+            '💡 *What can you buy with ' + poolAmount + '?*\n' +
+            `• 🍔 ${meals} McDonald\'s meals\n` +
+            '• 📱 Mobile recharge + Shopping\n' +
+            '• 🎮 Gaming credits\n' +
             '• 💸 Direct UPI transfer!\n\n';
         
         // 参与福利
         welcomeMsg += 
             '✨ *Why Join?*\n' +
-            '✅ *FREE* entry - No purchase needed\n' +
+            '✅ *100% FREE* - No purchase needed\n' +
             '🎁 *FREE* lottery numbers daily\n' +
             '💸 *Real cash* via UPI instantly\n' +
-            '📈 More numbers = Higher win chance\n\n';
+            '📈 More numbers = Higher win chance\n' +
+            '🎰 *Weekly total: ₹43,000!*\n\n';
         
         // 参与步骤 - 简化并突出行动
         welcomeMsg += 
