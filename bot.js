@@ -1377,25 +1377,25 @@ async function processApproval(adminId, chatId, rechargeId, amount, messageId) {
         
         console.log(`[APPROVE] Found user: id=${user.id}, telegramId=${user.telegramId}, gameId=${user.gameId}`);
 
-        // 生成号码
-        console.log(`[APPROVE] Generating numbers: user=${recharge.userId}, amount=${amount}`);
-        const numbers = await LotteryService.generateNumbers(recharge.userId, amount, 'recharge', today);
+        // 生成号码 - 使用 user.id 而不是 recharge.userId，确保格式一致
+        console.log(`[APPROVE] Generating numbers: user=${user.id}, amount=${amount}`);
+        const numbers = await LotteryService.generateNumbers(user.id, amount, 'recharge', today);
         console.log(`[APPROVE] Numbers generated: count=${numbers?.count}, tier=${numbers?.tier?.name}`);
 
         if (!numbers || !numbers.numbers || numbers.numbers.length === 0) {
             throw new Error('Failed to generate numbers');
         }
 
-        // 更新等级
-        const tierResult = await TierService.addRecharge(recharge.userId, amount);
+        // 更新等级 - 使用 user.id 确保格式一致
+        const tierResult = await TierService.addRecharge(user.id, amount);
 
-        // 检查VIP资格
-        await VIPService.processVIPCheck(recharge.userId, today);
+        // 检查VIP资格 - 使用 user.id
+        await VIPService.processVIPCheck(user.id, today);
 
         // 处理邀请奖励（注册奖励 + 首充奖励）
         // 1. 注册奖励：被邀请人注册成功，邀请人获得 2 Silver
-        const inviterId = await InviteService.getInviterId(recharge.userId);
-        console.log(`[INVITE] Processing invite rewards for user ${recharge.userId}, inviterId=${inviterId}`);
+        const inviterId = await InviteService.getInviterId(user.id);
+        console.log(`[INVITE] Processing invite rewards for user ${user.id}, inviterId=${inviterId}`);
         
         if (inviterId) {
             const inviter = await Database.findById('users', inviterId);
