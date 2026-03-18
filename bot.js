@@ -352,7 +352,56 @@ bot.on('callback_query', async (query) => {
     try {
         // ===== 立即参与 =====
         if (data === 'join_now') {
-            // 显示参与方式选择
+            // 检查用户是否已存在
+            const existingUser = await UserService.getUserByTelegramId(userId);
+            if (existingUser) {
+                // 老用户 - 直接跳转到充值流程
+                await bot.editMessageText(
+                    '💰 *Recharge to Get More Numbers*\n\n' +
+                    'You already have an account!\n' +
+                    'Recharge to get more lucky numbers.\n\n' +
+                    '💰 *₹100* → 2 Silver numbers\n' +
+                    '💰 *₹300* → 3 Silver numbers\n' +
+                    '💰 *₹500* → 4 Gold numbers\n' +
+                    '💰 *₹1,000* → 5 Gold numbers\n' +
+                    '💰 *₹2,000* → 6 Diamond numbers\n' +
+                    '💰 *₹3,000* → 7 Diamond numbers\n' +
+                    '💰 *₹5,000* → 8 Crown numbers\n' +
+                    '💰 *₹10,000* → 10 Crown numbers\n' +
+                    '💰 *₹20,000* → 12 VIP numbers\n\n' +
+                    '👇 *Select your recharge amount:*',
+                    {
+                        chat_id: chatId,
+                        message_id: messageId,
+                        parse_mode: 'Markdown',
+                        reply_markup: {
+                            inline_keyboard: [
+                                [
+                                    { text: '₹100', callback_data: 'tier_existing_100' },
+                                    { text: '₹300', callback_data: 'tier_existing_300' },
+                                    { text: '₹500', callback_data: 'tier_existing_500' }
+                                ],
+                                [
+                                    { text: '₹1K', callback_data: 'tier_existing_1000' },
+                                    { text: '₹2K', callback_data: 'tier_existing_2000' },
+                                    { text: '₹3K', callback_data: 'tier_existing_3000' }
+                                ],
+                                [
+                                    { text: '₹5K', callback_data: 'tier_existing_5000' },
+                                    { text: '₹10K', callback_data: 'tier_existing_10000' },
+                                    { text: '₹20K', callback_data: 'tier_existing_20000' }
+                                ],
+                                [{ text: '❌ Cancel', callback_data: 'cancel_join' }]
+                            ]
+                        }
+                    }
+                );
+
+                await bot.answerCallbackQuery(query.id, { text: 'Select recharge amount' });
+                return;
+            }
+
+            // 新用户 - 显示参与方式选择
             await bot.editMessageText(
                 '🎯 *Choose Participation Method*\n\n' +
                 '🎁 *FREE Entry*\n' +
@@ -382,6 +431,16 @@ bot.on('callback_query', async (query) => {
 
         // ===== 免费参与 =====
         if (data === 'join_free') {
+            // 检查用户是否已存在（禁止重复申请免费）
+            const existingUser = await UserService.getUserByTelegramId(userId);
+            if (existingUser) {
+                await bot.answerCallbackQuery(query.id, { 
+                    text: '❌ You already have an account! Use "My Account" or contact admin for free numbers.',
+                    show_alert: true
+                });
+                return;
+            }
+
             userState.set(userId, {
                 step: 'waiting_free_gameid',
                 entryType: 'free',
@@ -417,6 +476,61 @@ bot.on('callback_query', async (query) => {
 
         // ===== 充值参与 =====
         if (data === 'join_recharge') {
+            // 检查用户是否已存在
+            const existingUser = await UserService.getUserByTelegramId(userId);
+            
+            if (existingUser) {
+                // 老用户 - 直接显示充值档位（使用 tier_existing_）
+                userState.set(userId, {
+                    step: 'waiting_recharge_tier_existing',
+                    userId: existingUser.id,
+                    timestamp: Date.now()
+                });
+
+                await bot.editMessageText(
+                    '💰 *Recharge Entry - Select Tier*\n\n' +
+                    '💰 *₹100* → 2 Silver numbers\n' +
+                    '💰 *₹300* → 3 Silver numbers\n' +
+                    '💰 *₹500* → 4 Gold numbers\n' +
+                    '💰 *₹1,000* → 5 Gold numbers\n' +
+                    '💰 *₹2,000* → 6 Diamond numbers\n' +
+                    '💰 *₹3,000* → 7 Diamond numbers\n' +
+                    '💰 *₹5,000* → 8 Crown numbers\n' +
+                    '💰 *₹10,000* → 10 Crown numbers\n' +
+                    '💰 *₹20,000* → 12 VIP numbers\n\n' +
+                    '👇 *Select your recharge amount:*',
+                    {
+                        chat_id: chatId,
+                        message_id: messageId,
+                        parse_mode: 'Markdown',
+                        reply_markup: {
+                            inline_keyboard: [
+                                [
+                                    { text: '₹100', callback_data: 'tier_existing_100' },
+                                    { text: '₹300', callback_data: 'tier_existing_300' },
+                                    { text: '₹500', callback_data: 'tier_existing_500' }
+                                ],
+                                [
+                                    { text: '₹1K', callback_data: 'tier_existing_1000' },
+                                    { text: '₹2K', callback_data: 'tier_existing_2000' },
+                                    { text: '₹3K', callback_data: 'tier_existing_3000' }
+                                ],
+                                [
+                                    { text: '₹5K', callback_data: 'tier_existing_5000' },
+                                    { text: '₹10K', callback_data: 'tier_existing_10000' },
+                                    { text: '₹20K', callback_data: 'tier_existing_20000' }
+                                ],
+                                [{ text: '❌ Cancel', callback_data: 'cancel_join' }]
+                            ]
+                        }
+                    }
+                );
+
+                await bot.answerCallbackQuery(query.id, { text: 'Select recharge amount' });
+                return;
+            }
+
+            // 新用户 - 显示充值档位（使用 tier_）
             userState.set(userId, {
                 step: 'waiting_recharge_tier',
                 entryType: 'recharge',
@@ -1754,15 +1868,49 @@ bot.onText(/Join Now/, async (msg) => {
 
     const existingUser = await UserService.getUserByTelegramId(userId);
     if (existingUser) {
+        // 老用户 - 直接显示充值选项
         await bot.sendMessage(chatId,
-            '👋 You are already registered!\n\n' +
-            'Use "My Account" to view your numbers.',
-            getMainMenu()
+            '💰 *Recharge to Get More Numbers*\n\n' +
+            'You already have an account!\n' +
+            'Recharge to get more lucky numbers.\n\n' +
+            '💰 *₹100* → 2 Silver numbers\n' +
+            '💰 *₹300* → 3 Silver numbers\n' +
+            '💰 *₹500* → 4 Gold numbers\n' +
+            '💰 *₹1,000* → 5 Gold numbers\n' +
+            '💰 *₹2,000* → 6 Diamond numbers\n' +
+            '💰 *₹3,000* → 7 Diamond numbers\n' +
+            '💰 *₹5,000* → 8 Crown numbers\n' +
+            '💰 *₹10,000* → 10 Crown numbers\n' +
+            '💰 *₹20,000* → 12 VIP numbers\n\n' +
+            '👇 *Select your recharge amount:*',
+            {
+                parse_mode: 'Markdown',
+                reply_markup: {
+                    inline_keyboard: [
+                        [
+                            { text: '₹100', callback_data: 'tier_existing_100' },
+                            { text: '₹300', callback_data: 'tier_existing_300' },
+                            { text: '₹500', callback_data: 'tier_existing_500' }
+                        ],
+                        [
+                            { text: '₹1K', callback_data: 'tier_existing_1000' },
+                            { text: '₹2K', callback_data: 'tier_existing_2000' },
+                            { text: '₹3K', callback_data: 'tier_existing_3000' }
+                        ],
+                        [
+                            { text: '₹5K', callback_data: 'tier_existing_5000' },
+                            { text: '₹10K', callback_data: 'tier_existing_10000' },
+                            { text: '₹20K', callback_data: 'tier_existing_20000' }
+                        ],
+                        [{ text: '❌ Cancel', callback_data: 'cancel_join' }]
+                    ]
+                }
+            }
         );
         return;
     }
 
-    // 显示参与方式选择（与 /start 中的 join_now 回调一致）
+    // 新用户 - 显示参与方式选择（与 /start 中的 join_now 回调一致）
     await bot.sendMessage(chatId,
         '🎯 *Choose Participation Method*\n\n' +
         '🎁 *FREE Entry*\n' +
