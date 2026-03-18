@@ -64,7 +64,7 @@ const RechargeSchema = new mongoose.Schema({
     userId: mongoose.Schema.Types.Mixed,  // 支持 Number 或 String
     gameId: String,
     amount: Number,
-    tier: Number,
+    tier: mongoose.Schema.Types.Mixed,  // 支持 Number 或 String (如 "FREE")
     utrNumber: String,
     screenshot: String,
     status: { type: String, default: 'PENDING' },
