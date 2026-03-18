@@ -10,6 +10,7 @@
  */
 
 const ExternalConfig = require('./config');
+const Database = require('./database');  // 添加 Database 导入
 
 const CONFIG = {
     // 从外部 config.js 读取配置（优先级高）
