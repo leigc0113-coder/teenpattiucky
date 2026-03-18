@@ -113,6 +113,21 @@ class AdminGiveNumbers {
 
             await this.showHelp(chatId);
         });
+        
+        // /adjustpool [日期] [金额] - 调整指定日期的奖池金额
+        this.bot.onText(/\/adjustpool\s+(\d{4}-\d{2}-\d{2})\s+(\d+)/, async (msg, match) => {
+            const chatId = msg.chat.id;
+            const adminId = msg.from.id;
+
+            if (!this.isAdmin(adminId)) {
+                return;
+            }
+
+            const poolDate = match[1];
+            const newAmount = parseInt(match[2]);
+
+            await this.adjustPoolAmount(chatId, poolDate, newAmount);
+        });
     }
 
     // 手动发号
@@ -423,10 +438,93 @@ class AdminGiveNumbers {
             '*List User Numbers*\n' +
             '`/listnumbers [GameID]`\n' +
             'Example: `/listnumbers 1234567`\n\n' +
+            '*Adjust Pool Amount*\n' +
+            '`/adjustpool [YYYY-MM-DD] [amount]`\n' +
+            'Example: `/adjustpool 2026-03-18 5000`\n' +
+            '*For festival pool adjustment*\n\n' +
             '━━━━━━━━━━━━━━━━━━\n' +
             '*All actions are logged*';
 
         await this.bot.sendMessage(chatId, helpText, { parse_mode: 'Markdown' });
+    }
+
+    /**
+     * 调整奖池金额（用于节日等特殊情况）n     * @param {number} chatId - 聊天ID
+     * @param {string} poolDate - 日期 YYYY-MM-DD
+     * @param {number} newAmount - 新奖池金额
+     */
+    async adjustPoolAmount(chatId, poolDate, newAmount) {
+        try {
+            // 验证日期格式
+            if (!/^\d{4}-\d{2}-\d{2}$/.test(poolDate)) {
+                await this.bot.sendMessage(chatId, '❌ Invalid date format. Use YYYY-MM-DD');
+                return;
+            }
+
+            // 验证金额
+            if (isNaN(newAmount) || newAmount < 1000 || newAmount > 50000) {
+                await this.bot.sendMessage(chatId, '❌ Invalid amount. Must be between ₹1,000 and ₹50,000');
+                return;
+            }
+
+            // 查找奖池
+            let pool = await Database.findOne('pools', { date: poolDate });
+            
+            if (!pool) {
+                // 如果奖池不存在，创建一个新的
+                pool = {
+                    id: `pool_${poolDate}`,
+                    date: poolDate,
+                    baseAmount: newAmount,
+                    bronzeContribution: 0,
+                    silverContribution: 0,
+                    bronzeRecharge: 0,
+                    silverRecharge: 0,
+                    bonus: 0,
+                    finalAmount: newAmount,
+                    participantCount: 0,
+                    locked: false,
+                    isAdjusted: true,
+                    adjustedBy: 'admin',
+                    createdAt: new Date().toISOString()
+                };
+                await Database.insert('pools', pool);
+            } else {
+                // 如果已锁定，不能修改
+                if (pool.locked) {
+                    await this.bot.sendMessage(chatId, '❌ Cannot adjust: Pool is already locked for draw');
+                    return;
+                }
+
+                // 保存原始金额用于记录
+                const originalAmount = pool.finalAmount;
+                
+                // 更新奖池
+                pool.baseAmount = newAmount;
+                pool.finalAmount = newAmount;
+                pool.isAdjusted = true;
+                pool.adjustedBy = 'admin';
+                pool.adjustedAt = new Date().toISOString();
+                pool.originalAmount = originalAmount;
+                
+                await Database.update('pools', pool.id, pool);
+            }
+
+            // 发送确认消息
+            const confirmMsg = 
+                '✅ *Pool Amount Adjusted*\n\n' +
+                `Date: ${poolDate}\n` +
+                `New Amount: *₹${newAmount.toLocaleString()}*\n\n` +
+                '🎉 Festival special activated!';
+
+            await this.bot.sendMessage(chatId, confirmMsg, { parse_mode: 'Markdown' });
+            
+            console.log(`[ADMIN] Pool adjusted: ${poolDate} -> ₹${newAmount}`);
+
+        } catch (error) {
+            console.error('[ADJUST_POOL] Error:', error);
+            await this.bot.sendMessage(chatId, '❌ Failed to adjust pool amount');
+        }
     }
 }
 

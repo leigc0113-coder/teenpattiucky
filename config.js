@@ -108,13 +108,38 @@ module.exports = {
     // ==================== 奖池配置 ====================
     
     POOL: {
-        BASE_AMOUNT: 1000,
+        BASE_AMOUNT: 2000,           // 平日基础奖池: ₹2,000
+        WEEKEND_BASE_AMOUNT: 3000,   // 周末基础奖池: ₹3,000
+        FESTIVAL_BASE_AMOUNT: 3000,  // 节日基础奖池: ₹3,000
         REGULAR_RATE: 0.15,
         TIER_RATE: 0.10,
         WEEKEND_BONUS: 0.30,
         FESTIVAL_BONUS: 0.50,
-        MIN_POOL: 1000,
-        MAX_POOL: 10000
+        MIN_POOL: 2000,              // 最低保证: ₹2,000
+        MAX_POOL: 10000              // 最高上限: ₹10,000
+    },
+    
+    // ==================== 印度重要节日配置 ====================
+    // 格式: "MM-DD": "节日名称"
+    INDIAN_FESTIVALS: {
+        "01-01": "New Year",
+        "01-26": "Republic Day",
+        "03-14": "Holi",
+        "04-14": "Ambedkar Jayanti",
+        "05-01": "Labour Day",
+        "08-15": "Independence Day",
+        "08-19": "Raksha Bandhan",
+        "09-07": "Ganesh Chaturthi",
+        "10-02": "Gandhi Jayanti",
+        "10-12": "Dussehra",
+        "11-01": "Diwali",
+        "11-02": "Govardhan Puja",
+        "12-25": "Christmas"
+    },
+    
+    // 管理员通知配置
+    ADMIN_NOTIFICATIONS: {
+        FESTIVAL_POOL_ADJUSTMENT: true,  // 节日时通知管理员调整奖池
     },
     
     // ==================== 等级冷静期 ====================

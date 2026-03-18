@@ -72,19 +72,43 @@ class PoolService {
         }
 
         // 计算各部分
-        const base = CONFIG.POOL.BASE_AMOUNT;
-        const bronzeContribution = bronzeRecharge * 0.15;  // Bronze 15%
-        const silverContribution = silverRecharge * 0.10;  // Silver+ 10%
-        
-        console.log(`[POOL] Calculation: base=₹${base}, bronze=₹${bronzeRecharge}(₹${bronzeContribution}), silver=₹${silverRecharge}(₹${silverContribution})`);
-        
-        // 节日加成
+        // 根据日期确定基础奖池
         const date = new Date(calcDate);
         const dayOfWeek = date.getDay();
         const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
-        const bonusRate = isWeekend ? CONFIG.POOL.WEEKEND_BONUS : 0;
         
-        const subtotal = base + bronzeContribution + silverContribution;
+        // 检查是否是节日
+        const monthDay = calcDate.slice(5); // 获取 MM-DD 格式
+        const isFestival = CONFIG.INDIAN_FESTIVALS && CONFIG.INDIAN_FESTIVALS[monthDay];
+        const festivalName = isFestival ? CONFIG.INDIAN_FESTIVALS[monthDay] : null;
+        
+        // 确定基础奖池金额
+        let baseAmount;
+        if (isFestival) {
+            baseAmount = CONFIG.POOL.FESTIVAL_BASE_AMOUNT || 3000;
+            console.log(`[POOL] 🎉 Festival detected: ${festivalName}, Base: ₹${baseAmount}`);
+        } else if (isWeekend) {
+            baseAmount = CONFIG.POOL.WEEKEND_BASE_AMOUNT || 3000;
+            console.log(`[POOL] 🌟 Weekend detected, Base: ₹${baseAmount}`);
+        } else {
+            baseAmount = CONFIG.POOL.BASE_AMOUNT || 2000;
+            console.log(`[POOL] 📅 Regular day, Base: ₹${baseAmount}`);
+        }
+        
+        const bronzeContribution = bronzeRecharge * 0.15;  // Bronze 15%
+        const silverContribution = silverRecharge * 0.10;  // Silver+ 10%
+        
+        console.log(`[POOL] Calculation: base=₹${baseAmount}, bronze=₹${bronzeRecharge}(₹${bronzeContribution}), silver=₹${silverRecharge}(₹${silverContribution})`);
+        
+        // 节日/周末加成
+        let bonusRate = 0;
+        if (isFestival) {
+            bonusRate = CONFIG.POOL.FESTIVAL_BONUS || 0.50;
+        } else if (isWeekend) {
+            bonusRate = CONFIG.POOL.WEEKEND_BONUS || 0.30;
+        }
+        
+        const subtotal = baseAmount + bronzeContribution + silverContribution;
         const bonus = subtotal * bonusRate;
 
         // 计算最终奖池
@@ -95,13 +119,13 @@ class PoolService {
         // 获取参与人数
         const participantCount = await this.getParticipantCount(calcDate);
         
-        // 最低边界
+        // 最低边界（使用配置的基础金额作为最低）
         const minPool = Math.max(finalAmount, participantCount * 2, CONFIG.POOL.MIN_POOL);
         
         // 最高边界
         const maxPool = Math.min(minPool, CONFIG.POOL.MAX_POOL);
 
-        pool.baseAmount = base;
+        pool.baseAmount = baseAmount;
         pool.bronzeContribution = bronzeContribution;
         pool.silverContribution = silverContribution;
         pool.bronzeRecharge = bronzeRecharge;
@@ -109,6 +133,9 @@ class PoolService {
         pool.bonus = bonus;
         pool.finalAmount = Math.floor(maxPool);
         pool.participantCount = participantCount;
+        pool.isWeekend = isWeekend;
+        pool.isFestival = isFestival;
+        pool.festivalName = festivalName;
         pool.locked = false;
         pool.createdAt = new Date().toISOString();
 
@@ -123,8 +150,46 @@ class PoolService {
         } else {
             await Database.insert('pools', pool);
         }
+        
+        // 如果是节日，发送通知给管理员
+        if (isFestival && CONFIG.ADMIN_NOTIFICATIONS && CONFIG.ADMIN_NOTIFICATIONS.FESTIVAL_POOL_ADJUSTMENT) {
+            await this.notifyAdminFestival(calcDate, festivalName, pool.finalAmount);
+        }
 
         return pool;
+    }
+    
+    /**
+     * 通知管理员节日奖池信息
+     * @param {string} date - 日期
+     * @param {string} festivalName - 节日名称
+     * @param {number} currentPool - 当前奖池金额
+     */
+    async notifyAdminFestival(date, festivalName, currentPool) {
+        try {
+            const bot = require('./bot'); // 获取 bot 实例
+            const adminIds = CONFIG.ADMIN_IDS || [];
+            
+            const message = 
+                `🎉 *节日奖池通知* 🎉\n\n` +
+                `日期: ${date}\n` +
+                `节日: *${festivalName}*\n` +
+                `基础奖池: ₹3,000\n` +
+                `当前奖池: ₹${currentPool.toLocaleString()}\n\n` +
+                `💡 如需手动调整节日奖池金额，请回复命令:\n` +
+                `/adjustpool ${date} [新金额]`;
+            
+            for (const adminId of adminIds) {
+                try {
+                    await bot.sendMessage(adminId, message, { parse_mode: 'Markdown' });
+                    console.log(`[POOL] Festival notification sent to admin ${adminId}`);
+                } catch (err) {
+                    console.error(`[POOL] Failed to notify admin ${adminId}:`, err.message);
+                }
+            }
+        } catch (err) {
+            console.error('[POOL] Failed to send festival notification:', err.message);
+        }
     }
 
     /**
