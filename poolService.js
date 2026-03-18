@@ -217,15 +217,35 @@ class PoolService {
         
         const numbers = await Database.getAll('lotteryNumbers');
         
-        // 过滤当天的号码（按创建时间）
+        console.log(`[POOL] getParticipantCount: date=${date}, total numbers=${numbers.length}`);
+        console.log(`[POOL] IST range: ${istDate.toISOString()} to ${istDateNext.toISOString()}`);
+        
+        // 过滤当天的号码（按创建时间或date字段）
         const dayNumbers = numbers.filter(n => {
-            if (n.status !== 'VALID') return false;
+            if (n.status !== 'VALID') {
+                console.log(`[POOL] Skipping ${n.number}: status=${n.status}`);
+                return false;
+            }
+            
+            // 方法1: 使用date字段（更可靠）
+            if (n.date === date) {
+                console.log(`[POOL] Match by date field: ${n.number}, userId=${n.userId}`);
+                return true;
+            }
+            
+            // 方法2: 使用createdAt时间戳
             const numDate = new Date(n.createdAt);
-            return numDate >= istDate && numDate <= istDateNext;
+            const inRange = numDate >= istDate && numDate <= istDateNext;
+            if (inRange) {
+                console.log(`[POOL] Match by createdAt: ${n.number}, userId=${n.userId}`);
+            }
+            return inRange;
         });
         
         // 去重用户数
         const userIds = new Set(dayNumbers.map(n => n.userId));
+        console.log(`[POOL] Valid numbers: ${dayNumbers.length}, Unique users: ${userIds.size}`);
+        console.log(`[POOL] User IDs:`, Array.from(userIds));
         return userIds.size;
     }
 
