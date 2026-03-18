@@ -155,6 +155,61 @@ ${this.gameLink}
 #GoodNight #SeeYouTomorrow #DreamBig`;
     }
 
+    // 频道：游戏推荐
+    channel_game(data) {
+        const gameType = data.gameType || 'aviator';
+        
+        const games = {
+            aviator: {
+                name: 'Aviator ✈️',
+                tagline: 'Fly High, Cash Out Smart!',
+                features: ['100x multiplier potential', 'Cash out anytime', '15-second rounds'],
+                tip: 'Watch 3 rounds before betting. Patterns matter!'
+            },
+            dragon: {
+                name: 'Dragon vs Tiger 🐉⚡',
+                tagline: 'Fastest Game - 50/50 Thrills!',
+                features: ['10-second rounds', '50/50 win chance', '10x payout on tie'],
+                tip: 'If Dragon wins 3x in a row, bet on Tiger next!'
+            },
+            slots: {
+                name: 'Wealth Slot 💎',
+                tagline: 'Progressive Jackpots Await!',
+                features: ['₹5 Lakh+ jackpot', 'Free spin bonuses', 'Multiple paylines'],
+                tip: 'Jackpots hit every 2-3 hours. Time your play!'
+            },
+            chicken: {
+                name: 'Chicken Road 🐔',
+                tagline: 'Strategy Meets Luck!',
+                features: ['7 steps = 10x payout', '15 steps = 100x payout', 'Strategy game'],
+                tip: 'Greed gets you killed! Cash out at 7 steps for safety.'
+            },
+            teenpatti: {
+                name: 'Teen Patti 🇮🇳',
+                tagline: "India's Favorite Card Game!",
+                features: ['1M+ active players', 'Daily tournaments', '₹1 Lakh prize pools'],
+                tip: 'Reading opponents is everything. Watch before you bluff!'
+            }
+        };
+
+        const game = games[gameType] || games.aviator;
+
+        return `${this.randomEmoji('game')} Game Spotlight: ${game.name}
+
+${game.tagline}
+
+Why players LOVE it:
+${game.features.map(f => `• ${f}`).join('\n')}
+
+💡 Pro Tip: ${game.tip}
+
+🎮 Play FREE while waiting for the draw!
+
+${this.gameLink}
+
+#${gameType === 'dragon' ? 'DragonVsTiger' : gameType === 'aviator' ? 'Aviator' : gameType === 'slots' ? 'Slots' : gameType === 'chicken' ? 'ChickenRoad' : 'TeenPatti'} #WinBig #PlayAndWin`;
+    }
+
     // ============ 群组风格：社群互动 ============
 
     group_morning(data) {
@@ -239,6 +294,56 @@ How's everyone doing? What are you up to?
 Sweet dreams and big wins! 
 
 See you all tomorrow 👋`;
+    }
+
+    // 群组：游戏推荐
+    group_game(data) {
+        const gameType = data.gameType || 'aviator';
+        
+        const games = {
+            aviator: {
+                hook: 'Okay so I tried Aviator for the first time yesterday...',
+                vibe: 'The rush when that plane takes off is INSANE',
+                tip: 'Started small (₹50) and cashed at 2x. Small wins add up!',
+                ask: 'Who else plays this? What\'s your strategy?'
+            },
+            dragon: {
+                hook: 'Quick game between meetings? Say less.',
+                vibe: '10 seconds and you know. Love the speed.',
+                tip: 'Saw someone hit 10x on a tie yesterday. Wild.',
+                ask: 'Dragon or Tiger - what\'s your pick usually?'
+            },
+            slots: {
+                hook: 'The jackpot on Wealth Slot right now is CRAZY',
+                vibe: 'Just watching the numbers go up is addictive lol',
+                tip: 'Free spins during bonus rounds are where it\'s at',
+                ask: 'Anyone hit big on slots recently? Share your story!'
+            },
+            chicken: {
+                hook: 'This game is actually genius',
+                vibe: '7 steps = sweet spot. 10x and you\'re out. Clean.',
+                tip: 'Greed gets you killed. Literally. Cash out at 7!',
+                ask: 'How far do you usually go before chickening out? 😅'
+            },
+            teenpatti: {
+                hook: 'The OG. Nothing beats a good Teen Patti session.',
+                vibe: 'Bluffing your way through is an art form',
+                tip: 'Reading the table is everything. Watch more, play smart.',
+                ask: 'Who\'s got the best poker face here? 🃏'
+            }
+        };
+
+        const game = games[gameType] || games.aviator;
+
+        return `${game.hook}
+
+${game.vibe}
+
+TBH ${game.tip}
+
+${game.ask}
+
+Drop your strategies below 👇 Always learning from you guys!`;
     }
 
     // ============ 主生成接口 ============
