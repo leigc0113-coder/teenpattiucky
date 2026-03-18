@@ -142,6 +142,13 @@ Bot 正在运行中，可以正常使用！
 
 ### Git 提交记录
 ```
+b001091 fix: 添加缺失的 node-cron 依赖
+0faeaaf design: 优化欢迎消息 - 突出奖金金额显示
+  - 使用大号边框展示奖金金额
+  - 添加周末双倍奖金提示
+  - 显示具体奖金分布（1st/2nd/3rd prize）
+  - 添加奖金购买力说明（能买什么）
+  - 优化按钮文字：JOIN NOW - GET FREE NUMBERS
 a04158a fix: 更新 package-lock.json 添加 mongoose 依赖
 b20aa3a feat: 迁移到 MongoDB Atlas 数据库
 - 添加 MongoDB Atlas 支持（免费 M0 集群）
