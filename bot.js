@@ -1543,8 +1543,18 @@ bot.onText(/\/myaccount|My Account/, async (msg) => {
         await UserService.updateLastActive(user.id);
 
         const today = getTodayIST();
+        
+        // 调试：打印用户信息
+        console.log(`[ACCOUNT] Debug: user object:`, JSON.stringify(user));
+        console.log(`[ACCOUNT] Debug: user.id = ${user?.id}, type = ${typeof user?.id}`);
+        console.log(`[ACCOUNT] Debug: user.telegramId = ${user?.telegramId}`);
+        
         const tier = await TierService.getTierIdentity(user.id);
+        console.log(`[ACCOUNT] Debug: tier = ${tier ? 'found' : 'not found'}`);
+        
         const stats = await LotteryService.getUserNumberStats(user.id, today);
+        console.log(`[ACCOUNT] Debug: stats.totalCount = ${stats?.totalCount}`);
+        
         const vipProgress = await VIPService.getVIPProgress(user.id);
 
         let pool = null;

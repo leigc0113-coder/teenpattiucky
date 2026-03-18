@@ -56,9 +56,16 @@ class TierService {
      * @returns {Object|null} 等级身份
      */
     async getTierIdentity(userId) {
+        // 尝试直接查找
         let identity = await Database.findOne('tierIdentities', { userId });
         
-        // 如果不存在，自动创建（兼容旧数据）
+        // 如果没找到，尝试使用字符串匹配（避免类型不匹配）
+        if (!identity) {
+            const allIdentities = await Database.getAll('tierIdentities');
+            identity = allIdentities.find(i => String(i.userId) === String(userId));
+        }
+        
+        // 如果还不存在，自动创建（新用户）
         if (!identity) {
             console.log(`[TIER] Identity not found for ${userId}, creating...`);
             identity = await this.createTierIdentity(userId);

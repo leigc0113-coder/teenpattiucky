@@ -199,7 +199,17 @@ class Database {
     async findOne(collection, condition) {
         const Model = this.models[collection];
         if (!Model) return null;
-        return await Model.findOne(condition).lean();
+        
+        // 先尝试直接查询
+        let result = await Model.findOne(condition).lean();
+        
+        // 如果没找到且条件是 { userId: ... }，尝试字符串匹配
+        if (!result && condition.userId !== undefined) {
+            const allDocs = await Model.find().lean();
+            result = allDocs.find(doc => String(doc.userId) === String(condition.userId));
+        }
+        
+        return result;
     }
 
     async findAll(collection, condition) {
