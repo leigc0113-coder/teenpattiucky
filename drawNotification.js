@@ -254,6 +254,9 @@ class DrawNotification {
      */
     async sendAdminSummary(drawDate, winners, stats) {
         try {
+            console.log(`[ADMIN_SUMMARY] Called with ${winners?.length || 0} winners`);
+            console.log(`[ADMIN_SUMMARY] Winners data:`, JSON.stringify(winners));
+            
             const { ADMIN_IDS } = require('./config');
             if (!ADMIN_IDS || ADMIN_IDS.length === 0) return;
 
@@ -261,10 +264,16 @@ class DrawNotification {
             let winnerDetails = '';
             for (let i = 0; i < winners.length; i++) {
                 const w = winners[i];
+                console.log(`[ADMIN_SUMMARY] Processing winner ${i}:`, JSON.stringify(w));
+                
                 const user = await Database.findById('users', w.userId);
                 const prizeName = i === 0 ? '🥇 1st' : i <= 2 ? '🥈 2nd' : '🥉 3rd';
+                const number = w.number || 'undefined';
+                const amount = w.amount || 0;
+                const gameId = user?.gameId || 'Unknown';
+                
                 winnerDetails += 
-                    `${prizeName} | ${w.number} | ${user?.gameId || 'Unknown'} | ₹${w.amount.toLocaleString()}\n`;
+                    `${prizeName} | ${number} | ${gameId} | ₹${amount.toLocaleString()}\n`;
             }
 
             const summary = 
@@ -284,10 +293,13 @@ class DrawNotification {
             for (const adminId of ADMIN_IDS) {
                 try {
                     await this.bot.sendMessage(adminId, summary, { parse_mode: 'Markdown' });
+                    console.log(`[ADMIN_SUMMARY] Sent to admin ${adminId}`);
                 } catch (e) {
                     console.error(`[NOTIFY] Failed to notify admin ${adminId}`);
                 }
             }
+            
+            console.log('[ADMIN_SUMMARY] Completed');
 
         } catch (error) {
             console.error('[NOTIFY] Admin summary error:', error);
