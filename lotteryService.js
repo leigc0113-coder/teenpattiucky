@@ -36,6 +36,7 @@ class LotteryService {
         }
         
         // 生成号码
+        console.log(`[生成号码] 调用 generateTierNumbers, tierCode=${tierConfig.code}, count=${tierConfig.count}, date=${date}`);
         const numbers = await NumberTierService.generateTierNumbers(
             tierConfig.code,
             tierConfig.count,
@@ -43,6 +44,9 @@ class LotteryService {
         );
         
         console.log(`[生成号码] 生成了 ${numbers.length} 个号码`);
+        if (numbers.length > 0) {
+            console.log(`[生成号码] 第一个号码的 date: ${numbers[0].date}`);
+        }
         
         // 保存到数据库
         const now = new Date().toISOString();

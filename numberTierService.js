@@ -79,19 +79,21 @@ class NumberTierService {
         
         for (let i = 1; i <= numCount; i++) {
             const seq = maxSeq + i;
-            numbers.push({
+            const numObj = {
                 id: `${tierCode}-${date}-${seq}`,
                 number: `${tierCode}-${seq.toString().padStart(4, '0')}`,
                 tierCode,
                 tierName: tier.name,
                 emoji: tier.emoji,
                 weight: tier.baseWeight,
-                date,
+                date: date,  // 明确设置 date
                 createdAt: now
-            });
+            };
+            console.log(`[生成号码] 创建号码对象: ${numObj.number}, date=${numObj.date}`);
+            numbers.push(numObj);
         }
         
-        console.log(`[生成号码] 成功生成 ${numbers.length} 个号码`);
+        console.log(`[生成号码] 成功生成 ${numbers.length} 个号码，样例:`, numbers[0]);
         return numbers;
     }
     
