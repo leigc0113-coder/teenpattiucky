@@ -2253,12 +2253,19 @@ async function performDraw() {
         console.log('[DRAW] Step 1: Getting/creating pool...');
         let pool = await Database.findOne('pools', { date: today });
         
+        console.log('[DRAW] Step 1: Raw pool from DB:', JSON.stringify(pool));
+        
         if (!pool) {
             console.log('[DRAW] Pool not found, creating new pool...');
             pool = await PoolService.calculateTodayPool(today);
+            console.log('[DRAW] New pool created:', JSON.stringify(pool));
         }
         
-        console.log('[DRAW] Step 1: Pool found/created, ID:', pool?.id, 'Amount:', pool?.finalAmount);
+        // 检查 pool 对象结构
+        console.log('[DRAW] Step 1: Pool keys:', Object.keys(pool || {}));
+        console.log('[DRAW] Step 1: Pool finalAmount:', pool?.finalAmount);
+        console.log('[DRAW] Step 1: Pool amount:', pool?.amount);
+        console.log('[DRAW] Step 1: Pool baseAmount:', pool?.baseAmount);
         
         if (!pool || !pool.id) {
             console.error('[DRAW] Step 1: Cannot get pool');
@@ -2308,10 +2315,19 @@ async function performDraw() {
         // 使用新的通知系统
         console.log(`[DRAW] Step 6: Sending notifications...`);
         console.log(`[DRAW] Step 6: Pool finalAmount before notify: ${pool?.finalAmount}`);
+        
+        // 计算实际奖池金额
+        let notifyPoolAmount = pool?.finalAmount;
+        if (!notifyPoolAmount) {
+            // 尝试从其他字段获取或使用基础金额
+            notifyPoolAmount = pool?.baseAmount || pool?.amount || 2000;
+            console.log(`[DRAW] Step 6: Using fallback amount: ${notifyPoolAmount}`);
+        }
+        
+        console.log(`[DRAW] Step 6: Notifying with poolAmount: ${notifyPoolAmount}`);
+        
         const DrawNotification = require('./drawNotification');
         const notifier = new DrawNotification(bot);
-        const notifyPoolAmount = pool?.finalAmount || pool?.amount || 2750; // 使用默认值
-        console.log(`[DRAW] Step 6: Notifying with poolAmount: ${notifyPoolAmount}`);
         await notifier.sendDrawResults(today, result.winners, notifyPoolAmount);
         console.log('[DRAW] Step 6: Notifications sent');
         
