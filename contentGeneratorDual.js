@@ -94,20 +94,29 @@ Entry Options:
         const poolData = data.poolData || { amount: 0, participants: 0 };
         const minutes = data.minutes || 60;
         
-        const urgency = minutes <= 30 ? '⏰ FINAL 30 MINUTES!' : 
-                       minutes <= 60 ? '🔥 LAST HOUR!' : '⏳ Time is running out!';
+        // 紧迫感层级
+        const urgency = minutes <= 10 ? '🔥 FINAL 10 MINUTES!' :
+                       minutes <= 30 ? '⏰ Only 30 mins left!' :
+                       minutes <= 60 ? '⚡ Last hour - Don\'t miss out!' :
+                       '⏳ Drawing soon...';
+        
+        // 增长显示
+        const basePool = 2000;
+        const growth = poolData.amount > basePool 
+            ? `📈 +${Math.round((poolData.amount - basePool) / basePool * 100)}% boost!` 
+            : '';
 
         return `${urgency}
 
 The draw is happening soon! Don't miss your chance to win!
 
-🎱 Pool Amount: ${this.formatMoney(poolData.amount)}
+🎱 Pool Amount: ${this.formatMoney(poolData.amount)} ${growth}
 👥 ${poolData.participants} players competing
 
 ${minutes <= 30 ? '⚡ Last chance to join! Numbers closing soon!' : '✅ Still time to get your lucky numbers!'}
 
 💰 Entry: ₹100 - ₹20,000
-🎫 Get 2-12 lucky numbers based on entry
+🎫 Get 2-12 lucky numbers
 
 👉 Join Now: ${this.gameLink}
 
@@ -210,7 +219,34 @@ ${this.gameLink}
 #${gameType === 'dragon' ? 'DragonVsTiger' : gameType === 'aviator' ? 'Aviator' : gameType === 'slots' ? 'Slots' : gameType === 'chicken' ? 'ChickenRoad' : 'TeenPatti'} #WinBig #PlayAndWin`;
     }
 
-    // ============ 群组风格：社群互动 ============
+    // 频道：用户见证
+    channel_testimonial(data) {
+        const testimonials = [
+            { name: 'Raj_2024', amount: 1200, quote: 'First time playing and I won! The UPI payment was instant.' },
+            { name: 'Priya_Gamer', amount: 800, quote: 'Love the daily draws. Easy to play and real cash prizes!' },
+            { name: 'Vijay_Kumar', amount: 2500, quote: 'Best lottery bot on Telegram. Won twice this week!' },
+            { name: 'Anjali_M', amount: 600, quote: 'Joined with free entry, won real money. Amazing!' }
+        ];
+        
+        const t = this.randomPick(testimonials);
+        
+        return `💬 Real Winner Story
+
+"${t.quote}" 
+
+- ${t.name}, Won ₹${t.amount.toLocaleString()}
+
+You could be next! 🎉
+
+Join today's draw:
+💰 Pool growing fast
+🎁 Free entry available
+⏰ Draw at 21:00 IST
+
+👉 ${this.gameLink}
+
+#WinnerStory #RealCash #PlayAndWin`;
+    }
 
     group_morning(data) {
         const poolData = data.poolData || { amount: 0, participants: 0 };
