@@ -1540,6 +1540,12 @@ bot.onText(/\/myaccount|My Account/, async (msg) => {
             return;
         }
 
+        // 确保 user.id 存在
+        if (!user.id) {
+            user.id = `u_${user.telegramId}`;
+            console.log(`[ACCOUNT] Fixed missing user.id: ${user.id}`);
+        }
+
         await UserService.updateLastActive(user.id);
 
         const today = getTodayIST();
@@ -1966,7 +1972,9 @@ bot.onText(/\/pool|Current Pool/, async (msg) => {
         }
 
         if (user) {
-            const userStats = await LotteryService.getUserNumberStats(user.id, today);
+            // 确保 user.id 存在
+            const actualUserId = user.id || `u_${user.telegramId}`;
+            const userStats = await LotteryService.getUserNumberStats(actualUserId, today);
             if (userStats.totalCount > 0) {
                 poolMsg += `🎫 *My Entry:*\n`;
                 poolMsg += `• Numbers: ${userStats.totalCount}\n`;
