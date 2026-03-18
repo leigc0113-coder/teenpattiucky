@@ -114,7 +114,12 @@ class UserService {
      * @returns {Object|null} 用户对象或null
      */
     async getUserByTelegramId(telegramId) {
-        return await Database.findOne('users', { telegramId });
+        const user = await Database.findOne('users', { telegramId });
+        if (user && !user.id) {
+            // 如果没有 id 字段，使用 telegramId 构造
+            user.id = `u_${telegramId}`;
+        }
+        return user;
     }
 
     /**

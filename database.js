@@ -11,6 +11,7 @@ const mongoose = require('mongoose');
 
 // 定义 Schema
 const UserSchema = new mongoose.Schema({
+    id: String,                       // 用户唯一标识 (如 "u_7054117110")
     telegramId: Number,
     gameId: String,
     balance: { type: Number, default: 0 },
