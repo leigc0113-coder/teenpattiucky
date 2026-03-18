@@ -426,9 +426,11 @@ const MenuContent = {
     helpCenter: {
         en: {
             title: '⚖️ Rules & Help',
-            content: '━━━━━━━━━━━━━━━━━━━\nChoose a topic:',
+            content: '━━━━━━━━━━━━━━━━━━━\nChoose a topic:\n━━━━━━━━━━━━━━━━━━━\n\n🎯 How to Play - Get started\n❓ FAQ - Common questions\n📊 Prize Pool Info - How prizes work',
             buttons: [
+                [{ text: '🎯 How to Play', callback_data: 'menu_how_to_play' }],
                 [{ text: '❓ FAQ', callback_data: 'menu_faq' }],
+                [{ text: '📊 Prize Pool Info', callback_data: 'menu_pool_info' }],
                 [{ text: '📋 User Rules', callback_data: 'menu_user_rules' }],
                 [{ text: '⚖️ Fairness', callback_data: 'menu_fairness' }],
                 [{ text: '📜 Legal', callback_data: 'menu_legal' }],
@@ -439,9 +441,11 @@ const MenuContent = {
         },
         zh: {
             title: '⚖️ 规则与帮助',
-            content: '━━━━━━━━━━━━━━━━━━━\n选择您想了解的内容：',
+            content: '━━━━━━━━━━━━━━━━━━━\n选择您想了解的内容：\n━━━━━━━━━━━━━━━━━━━\n\n🎯 如何参与 - 快速开始\n❓ 常见问题 - 常见问题解答\n📊 奖池说明 - 奖金如何分配',
             buttons: [
+                [{ text: '🎯 如何参与', callback_data: 'menu_how_to_play' }],
                 [{ text: '❓ 常见问题', callback_data: 'menu_faq' }],
+                [{ text: '📊 奖池说明', callback_data: 'menu_pool_info' }],
                 [{ text: '📋 用户准则', callback_data: 'menu_user_rules' }],
                 [{ text: '⚖️ 公平性', callback_data: 'menu_fairness' }],
                 [{ text: '📜 法律声明', callback_data: 'menu_legal' }],
@@ -525,19 +529,26 @@ const MenuContent = {
                 '━━━━━━━━━━━━━━━━━━━\n' +
                 '*Rules & Guidelines*\n' +
                 '━━━━━━━━━━━━━━━━━━━\n\n' +
-                '*1. Account*\n' +
-                '• One account per user\n' +
+                '*✅ Allowed*\n' +
                 '• Use real Game ID\n' +
-                '• No fake information\n\n' +
-                '*2. Participation*\n' +
-                '• FREE: 1 number per user\n' +
-                '• Recharge: Multiple times allowed\n' +
-                '• Numbers valid for the day\n\n' +
-                '*3. Conduct*\n' +
-                '• No cheating or bots\n' +
-                '• No multiple accounts\n' +
-                '• Respect other players',
+                '• Invite real friends\n' +
+                '• Daily check-in\n' +
+                '• Follow community rules\n\n' +
+                '*❌ Not Allowed*\n' +
+                '• Fake identity/screenshots\n' +
+                '• Multiple accounts/devices\n' +
+                '• Bots or scripts\n' +
+                '• Ads or spam\n' +
+                '• Harassment\n\n' +
+                '*⚠️ Consequences*\n' +
+                '1st: Warning\n' +
+                '2nd: 7-day freeze\n' +
+                '3rd: Permanent ban\n' +
+                'Serious: Ban + prize void\n\n' +
+                '*📞 Report*\n' +
+                'Contact @support_account to report violations',
             buttons: [
+                [{ text: '💬 Contact Support', callback_data: 'action_support' }],
                 [{ text: '🔙 Back', callback_data: 'menu_help_center' }]
             ]
         },
@@ -547,19 +558,26 @@ const MenuContent = {
                 '━━━━━━━━━━━━━━━━━━━\n' +
                 '*规则与准则*\n' +
                 '━━━━━━━━━━━━━━━━━━━\n\n' +
-                '*1. 账号规则*\n' +
-                '• 每人限一个账号\n' +
-                '• 使用真实游戏ID\n' +
-                '• 禁止虚假信息\n\n' +
-                '*2. 参与规则*\n' +
-                '• 免费：每人限1个号码\n' +
-                '• 充值：可多次参与\n' +
-                '• 号码当日有效\n\n' +
-                '*3. 行为准则*\n' +
-                '• 禁止作弊或使用机器人\n' +
-                '• 禁止多账号操作\n' +
-                '• 尊重其他玩家',
+                '*✅ 允许行为*\n' +
+                '• 使用真实Game ID\n' +
+                '• 邀请真实朋友\n' +
+                '• 每日正常签到\n' +
+                '• 遵守社区规则\n\n' +
+                '*❌ 禁止行为*\n' +
+                '• 使用虚假身份或截图\n' +
+                '• 一人多号/多设备作弊\n' +
+                '• 恶意刷量或脚本\n' +
+                '• 发布广告或垃圾信息\n' +
+                '• 辱骂他人或传播谣言\n\n' +
+                '*⚠️ 违规后果*\n' +
+                '首次违规: 警告\n' +
+                '二次违规: 冻结7天\n' +
+                '三次违规: 永久封号\n' +
+                '严重违规: 直接封号+奖金清零\n\n' +
+                '*📞 举报渠道*\n' +
+                '发现违规行为请联系 @support_account 举报',
             buttons: [
+                [{ text: '💬 联系客服', callback_data: 'action_support' }],
                 [{ text: '🔙 返回', callback_data: 'menu_help_center' }]
             ]
         }
@@ -634,8 +652,13 @@ const MenuContent = {
                 '*3. Rights*\n' +
                 '• We reserve the right to modify rules\n' +
                 '• Suspend accounts for violations\n' +
-                '• Void fraudulent entries',
+                '• Void fraudulent entries\n\n' +
+                '*📧 Contact*\n' +
+                'Operator: TeenPattiMaster Company\n' +
+                'Support: @support_account\n' +
+                'Admins: @Winbiginsta @jack059316',
             buttons: [
+                [{ text: '💬 Contact Support', callback_data: 'action_support' }],
                 [{ text: '🔙 Back', callback_data: 'menu_help_center' }]
             ]
         },
@@ -656,8 +679,13 @@ const MenuContent = {
                 '*3. 权利保留*\n' +
                 '• 我们保留修改规则的权利\n' +
                 '• 违规账号将被暂停\n' +
-                '• 欺诈参与将被取消资格',
+                '• 欺诈参与将被取消资格\n\n' +
+                '*📧 联系我们*\n' +
+                '运营方: TeenPattiMaster Company\n' +
+                '客服: @support_account\n' +
+                '管理员: @Winbiginsta @jack059316',
             buttons: [
+                [{ text: '💬 联系客服', callback_data: 'action_support' }],
                 [{ text: '🔙 返回', callback_data: 'menu_help_center' }]
             ]
         }
@@ -671,19 +699,27 @@ const MenuContent = {
                 '━━━━━━━━━━━━━━━━━━━\n' +
                 '*Play Responsibly*\n' +
                 '━━━━━━━━━━━━━━━━━━━\n\n' +
-                '*1. Set Limits*\n' +
-                '• Only spend what you can afford\n' +
-                '• Set daily/monthly budgets\n' +
-                '• Take breaks regularly\n\n' +
-                '*2. Warning Signs*\n' +
-                '• Spending more than planned\n' +
-                '• Chasing losses\n' +
-                '• Neglecting responsibilities\n\n' +
-                '*3. Help*\n' +
-                '• Contact support for self-exclusion\n' +
-                '• Seek help if needed\n' +
-                '• Remember: it\'s entertainment',
+                '*⏰ Self-Limit Tools*\n' +
+                '• Daily limit: ₹50,000\n' +
+                '• Cool-off: 7-day pause available\n' +
+                '• Self-exclusion: Permanent exit available\n\n' +
+                '*🚨 Warning Signs*\n' +
+                '□ Spending more than planned\n' +
+                '□ Chasing losses\n' +
+                '□ Neglecting responsibilities\n' +
+                '□ Borrowing money to play\n\n' +
+                '*📞 Help Resources*\n' +
+                'India Mental Health Helpline:\n' +
+                '• Vandrevala Foundation: +91 9999 666 555\n' +
+                '• iCall: +91 22 2556 3291\n' +
+                '• Available 24/7\n\n' +
+                '*💡 Remember*\n' +
+                '• It\'s entertainment, not income\n' +
+                '• Set a budget and stick to it\n' +
+                '• Take breaks regularly\n' +
+                '• Seek help if needed',
             buttons: [
+                [{ text: '⚙️ Set Limits', callback_data: 'action_set_limits' }],
                 [{ text: '💬 Contact Support', callback_data: 'action_support' }],
                 [{ text: '🔙 Back', callback_data: 'menu_help_center' }]
             ]
@@ -694,19 +730,27 @@ const MenuContent = {
                 '━━━━━━━━━━━━━━━━━━━\n' +
                 '*理性参与*\n' +
                 '━━━━━━━━━━━━━━━━━━━\n\n' +
-                '*1. 设定限制*\n' +
-                '• 只花您能承受的钱\n' +
-                '• 设定每日/每月预算\n' +
-                '• 定期休息\n\n' +
-                '*2. 警示信号*\n' +
-                '• 花费超出计划\n' +
-                '• 试图追回损失\n' +
-                '• 忽视责任\n\n' +
-                '*3. 寻求帮助*\n' +
-                '• 联系客服申请自我排除\n' +
-                '• 需要时寻求专业帮助\n' +
-                '• 记住：这只是娱乐',
+                '*⏰ 自我限制工具*\n' +
+                '• 每日限额: ₹50,000\n' +
+                '• 冷静期: 可申请7天暂停\n' +
+                '• 自我排除: 可申请永久退出\n\n' +
+                '*🚨 问题博彩信号*\n' +
+                '□ 充值超过承受能力\n' +
+                '□ 试图追回损失\n' +
+                '□ 影响工作或生活\n' +
+                '□ 向他人借钱参与\n\n' +
+                '*📞 求助资源*\n' +
+                '印度心理健康热线:\n' +
+                '• Vandrevala Foundation: +91 9999 666 555\n' +
+                '• iCall: +91 22 2556 3291\n' +
+                '• 24小时服务\n\n' +
+                '*💡 请记住*\n' +
+                '• 这是娱乐，不是收入来源\n' +
+                '• 设定预算并坚持\n' +
+                '• 定期休息\n' +
+                '• 需要时寻求帮助',
             buttons: [
+                [{ text: '⚙️ 设置限制', callback_data: 'action_set_limits' }],
                 [{ text: '💬 联系客服', callback_data: 'action_support' }],
                 [{ text: '🔙 返回', callback_data: 'menu_help_center' }]
             ]
