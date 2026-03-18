@@ -52,9 +52,16 @@ const LotteryNumberSchema = new mongoose.Schema({
     userId: mongoose.Schema.Types.Mixed,  // 支持 Number 或 String
     gameId: String,
     tierId: String,
+    tierCode: String,
+    tierName: String,
+    emoji: String,
+    weight: Number,
+    finalWeight: Number,
+    source: String,
     level: Number,
     number: String,
     type: String,
+    date: String,  // 添加 date 字段
     createdAt: String,
     drawDate: String,
     status: { type: String, default: 'ACTIVE' }
