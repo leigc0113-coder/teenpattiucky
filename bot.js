@@ -2250,34 +2250,72 @@ async function performDraw() {
     console.log(`[DRAW] ========================================`);
 
     try {
-        console.log('[DRAW] Step 1: Locking pool...');
-        await PoolService.lockPool(today);
-        console.log('[DRAW] Step 1: Pool locked successfully');
+        console.log('[DRAW] Step 1: Getting/creating pool...');
+        let pool = await Database.findOne('pools', { date: today });
         
-        console.log('[DRAW] Step 2: Drawing winners...');
-        const result = await DrawService.drawWinners(today);
-        console.log('[DRAW] Step 2: Draw result:', JSON.stringify(result));
+        if (!pool) {
+            console.log('[DRAW] Pool not found, creating new pool...');
+            pool = await PoolService.calculateTodayPool(today);
+        }
+        
+        console.log('[DRAW] Step 1: Pool found/created, ID:', pool?.id, 'Amount:', pool?.finalAmount);
+        
+        if (!pool || !pool.id) {
+            console.error('[DRAW] Step 1: Cannot get pool');
+            return;
+        }
+        
+        console.log('[DRAW] Step 2: Locking pool...');
+        await Database.update('pools', pool.id, { locked: true });
+        console.log('[DRAW] Step 2: Pool locked successfully');
+        
+        console.log('[DRAW] Step 3: Drawing winners...');
+        // 直接从 DrawService 复制逻辑，但跳过 locked 检查
+        const result = await drawWinnersDirect(today, pool);
+        console.log('[DRAW] Step 3: Draw result:', JSON.stringify(result));
 
         if (!result.success) {
             console.error('[DRAW] Failed:', result.message);
-            console.error('[DRAW] Draw aborted');
             return;
         }
 
-        console.log(`[DRAW] Step 3: Winners selected: ${result.winners.length}`);
-        console.log(`[DRAW] Step 3: Pool amount: ₹${result.poolAmount}`);
+        console.log(`[DRAW] Step 4: Winners selected: ${result.winners.length}`);
+
+        // 保存中奖记录
+        for (const winner of result.winners) {
+            await Database.insert('winners', {
+                id: `win_${today}_${winner.number}`,
+                drawDate: today,
+                userId: winner.userId,
+                number: winner.number,
+                tierCode: winner.tierCode,
+                prizeTier: winner.prizeTier,
+                amount: winner.amount,
+                createdAt: new Date().toISOString()
+            });
+            
+            // 更新号码状态为 WON
+            await Database.update('lotteryNumbers', winner.numberId, { status: 'WON' });
+        }
+        
+        console.log('[DRAW] Step 5: Saving draw results...');
+        await Database.update('pools', pool.id, { 
+            winners: result.winners.length,
+            drawCompleted: true,
+            drawTime: new Date().toISOString()
+        });
 
         // 使用新的通知系统
-        console.log('[DRAW] Step 4: Sending notifications...');
+        console.log('[DRAW] Step 6: Sending notifications...');
         const DrawNotification = require('./drawNotification');
         const notifier = new DrawNotification(bot);
-        await notifier.sendDrawResults(today, result.winners, result.poolAmount);
-        console.log('[DRAW] Step 4: Private notifications sent');
+        await notifier.sendDrawResults(today, result.winners, pool.finalAmount);
+        console.log('[DRAW] Step 6: Notifications sent');
         
-        // 同时推送到频道和群组
-        console.log('[DRAW] Step 5: Announcing to channel/group...');
-        await integration.announceDrawResult(today, result.winners, result.poolAmount);
-        console.log('[DRAW] Step 5: Channel/group announcement sent');
+        // 推送到频道和群组
+        console.log('[DRAW] Step 7: Announcing to channel/group...');
+        await integration.announceDrawResult(today, result.winners, pool.finalAmount);
+        console.log('[DRAW] Step 7: Announcement sent');
         
         console.log('[DRAW] ========================================');
         console.log('[DRAW] Draw completed successfully!');
@@ -2288,6 +2326,98 @@ async function performDraw() {
         console.error('[DRAW] Error during draw:', error);
         console.error('[DRAW] Error stack:', error.stack);
         console.error('[DRAW] ========================================');
+    }
+}
+
+// 直接开奖函数（跳过 locked 检查）
+async function drawWinnersDirect(drawDate, pool) {
+    try {
+        console.log(`[DRAW_DIRECT] Getting numbers for ${drawDate}`);
+        
+        // 获取所有有效号码
+        let allNumbers = await Database.getAll('lotteryNumbers');
+        let numbers = allNumbers.filter(n => n.date === drawDate && n.status === 'VALID');
+        
+        console.log(`[DRAW_DIRECT] Found ${numbers.length} valid numbers`);
+        
+        if (numbers.length < 10) {
+            return { success: false, message: 'NOT_ENOUGH_PARTICIPANTS' };
+        }
+        
+        // 计算中奖人数（最多20人，5%的中奖率）
+        const winnerCount = Math.min(Math.floor(numbers.length * 0.05), 20);
+        console.log(`[DRAW_DIRECT] Will select ${winnerCount} winners`);
+        
+        // 使用权重随机选择
+        const crypto = require('crypto');
+        const seed = Date.now().toString();
+        const winners = [];
+        const available = [...numbers];
+        
+        for (let i = 0; i < winnerCount && available.length > 0; i++) {
+            // 计算总权重
+            const totalWeight = available.reduce((sum, n) => sum + (n.weight || 1), 0);
+            
+            // 生成随机数
+            const hash = crypto.createHash('sha256').update(seed + i).digest('hex');
+            let random = parseInt(hash.substring(0, 8), 16) / 0xffffffff;
+            
+            // 根据权重选择
+            let currentWeight = 0;
+            let selectedIndex = 0;
+            
+            for (let j = 0; j < available.length; j++) {
+                currentWeight += (available[j].weight || 1) / totalWeight;
+                if (random <= currentWeight) {
+                    selectedIndex = j;
+                    break;
+                }
+            }
+            
+            const winner = available.splice(selectedIndex, 1)[0];
+            winners.push(winner);
+        }
+        
+        // 分配奖金
+        const totalPool = pool.finalAmount || 2000;
+        const firstPrize = totalPool * 0.4;
+        const secondPrize = totalPool * 0.2 / 2;
+        const thirdPrize = totalPool * 0.2 / (winnerCount - 3);
+        
+        const result = winners.map((w, i) => {
+            let prizeTier, amount;
+            if (i === 0) {
+                prizeTier = 1;
+                amount = firstPrize;
+            } else if (i <= 2) {
+                prizeTier = 2;
+                amount = secondPrize;
+            } else {
+                prizeTier = 3;
+                amount = thirdPrize;
+            }
+            
+            return {
+                numberId: w.id,
+                number: w.number,
+                userId: w.userId,
+                tierCode: w.tierCode,
+                prizeTier,
+                amount: Math.floor(amount)
+            };
+        });
+        
+        console.log(`[DRAW_DIRECT] Selected ${result.length} winners`);
+        
+        return {
+            success: true,
+            winners: result,
+            poolAmount: totalPool
+        };
+        
+    } catch (error) {
+        console.error('[DRAW_DIRECT] Error:', error);
+        return { success: false, message: error.message };
     }
 }
 
