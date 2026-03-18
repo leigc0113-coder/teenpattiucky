@@ -54,6 +54,13 @@ class NumberTierService {
      */
     async generateTierNumbers(tierCode, count, date) {
         console.log(`[生成号码] 等级: ${tierCode}, 数量: ${count}, 日期: ${date}`);
+        console.log(`[生成号码] 接收到的 date 参数: ${date}, 类型: ${typeof date}`);
+        
+        if (!date) {
+            console.error(`[生成号码] ERROR: date 参数为空！`);
+            date = new Date().toISOString().split('T')[0];
+            console.log(`[生成号码] 使用备用日期: ${date}`);
+        }
         
         const tier = Object.values(CONFIG.NUMBER_TIERS).find(t => t.code === tierCode);
         if (!tier) {
@@ -79,6 +86,13 @@ class NumberTierService {
         
         for (let i = 1; i <= numCount; i++) {
             const seq = maxSeq + i;
+            
+            // 确保 date 存在
+            if (!date) {
+                console.error(`[生成号码] ERROR: date 为空，无法创建号码`);
+                date = new Date().toISOString().split('T')[0];
+            }
+            
             const numObj = {
                 id: `${tierCode}-${date}-${seq}`,
                 number: `${tierCode}-${seq.toString().padStart(4, '0')}`,

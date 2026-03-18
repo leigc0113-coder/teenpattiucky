@@ -37,6 +37,13 @@ class LotteryService {
         
         // 生成号码
         console.log(`[生成号码] 调用 generateTierNumbers, tierCode=${tierConfig.code}, count=${tierConfig.count}, date=${date}`);
+        console.log(`[生成号码] date 类型: ${typeof date}, date 值: ${date}`);
+        
+        if (!date) {
+            console.error(`[生成号码] ERROR: date 为空！使用当前日期`);
+            date = new Date().toISOString().split('T')[0];
+        }
+        
         const numbers = await NumberTierService.generateTierNumbers(
             tierConfig.code,
             tierConfig.count,
@@ -52,17 +59,24 @@ class LotteryService {
         const now = new Date().toISOString();
         console.log(`[生成号码] 开始保存，userId=${userId}, date=${date}, 数量=${numbers.length}`);
         for (const num of numbers) {
+            // 确保 num.date 存在，如果不存在使用传入的 date 参数
+            const numDate = num.date || date;
+            if (!numDate) {
+                console.error(`[生成号码] ERROR: num.date 和 date 都为空！`);
+            }
+            
             const record = {
                 ...num,
                 userId,
                 source,
                 finalWeight: num.weight * vipMultiplier,
                 status: 'VALID',
+                date: numDate,  // 明确设置 date
                 createdAt: now
             };
             console.log(`[生成号码] 保存号码: ${record.number}, userId=${record.userId}, date=${record.date}`);
             await Database.insert('lotteryNumbers', record);
-            console.log(`[生成号码] 号码保存成功: ${record.number}`);
+            console.log(`[生成号码] 号码保存成功: ${record.number}, date=${record.date}`);
         }
         console.log(`[生成号码] 所有号码保存完成`);
         
