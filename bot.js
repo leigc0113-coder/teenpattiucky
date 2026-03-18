@@ -2245,29 +2245,49 @@ bot.onText(/\/help|❓ Help/, async (msg) => {
 
 async function performDraw() {
     const today = getTodayIST();
+    console.log(`[DRAW] ========================================`);
     console.log(`[DRAW] Starting draw for ${today}`);
+    console.log(`[DRAW] ========================================`);
 
     try {
+        console.log('[DRAW] Step 1: Locking pool...');
         await PoolService.lockPool(today);
+        console.log('[DRAW] Step 1: Pool locked successfully');
+        
+        console.log('[DRAW] Step 2: Drawing winners...');
         const result = await DrawService.drawWinners(today);
+        console.log('[DRAW] Step 2: Draw result:', JSON.stringify(result));
 
         if (!result.success) {
             console.error('[DRAW] Failed:', result.message);
+            console.error('[DRAW] Draw aborted');
             return;
         }
 
-        console.log(`[DRAW] Winners: ${result.winners.length}`);
+        console.log(`[DRAW] Step 3: Winners selected: ${result.winners.length}`);
+        console.log(`[DRAW] Step 3: Pool amount: ₹${result.poolAmount}`);
 
         // 使用新的通知系统
+        console.log('[DRAW] Step 4: Sending notifications...');
         const DrawNotification = require('./drawNotification');
         const notifier = new DrawNotification(bot);
         await notifier.sendDrawResults(today, result.winners, result.poolAmount);
+        console.log('[DRAW] Step 4: Private notifications sent');
         
         // 同时推送到频道和群组
+        console.log('[DRAW] Step 5: Announcing to channel/group...');
         await integration.announceDrawResult(today, result.winners, result.poolAmount);
+        console.log('[DRAW] Step 5: Channel/group announcement sent');
+        
+        console.log('[DRAW] ========================================');
+        console.log('[DRAW] Draw completed successfully!');
+        console.log('[DRAW] ========================================');
 
     } catch (error) {
-        console.error('[DRAW] Error:', error);
+        console.error('[DRAW] ========================================');
+        console.error('[DRAW] Error during draw:', error);
+        console.error('[DRAW] Error stack:', error.stack);
+        console.error('[DRAW] ========================================');
     }
 }
 
@@ -2418,28 +2438,36 @@ if (CONFIG.CHANNEL_ID) {
 // 每日 21:00 - 自动开奖
 cron.schedule('0 21 * * *', async () => {
     console.log('[CRON] Auto draw starting at 21:00 IST...');
+    console.log('[CRON] Current time:', new Date().toISOString());
+    
     try {
         // 检查今天是否已经开过奖
         const today = getTodayIST();
+        console.log('[CRON] Today date:', today);
+        
         const existingPool = await PoolService.getTodayPool();
+        console.log('[CRON] Pool status:', existingPool ? `locked=${existingPool.locked}, amount=${existingPool.finalAmount}` : 'No pool found');
         
         if (existingPool?.locked) {
             console.log('[CRON] Pool already locked today, skipping draw');
             return;
         }
         
+        console.log('[CRON] Starting performDraw...');
         // 执行开奖
         await performDraw();
         console.log('[CRON] Auto draw completed successfully');
         
     } catch (error) {
         console.error('[CRON] Auto draw failed:', error);
+        console.error('[CRON] Error stack:', error.stack);
         // 通知管理员开奖失败
         for (const adminId of CONFIG.ADMIN_IDS) {
             try {
                 await bot.sendMessage(adminId, 
                     `❌ *Auto Draw Failed*\n\n` +
-                    `Error: ${error.message}\n\n` +
+                    `Error: ${error.message}\n` +
+                    `Time: ${new Date().toISOString()}\n\n` +
                     `Please check logs and run manual draw if needed.`,
                     { parse_mode: 'Markdown' }
                 );
