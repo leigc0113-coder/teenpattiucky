@@ -2667,8 +2667,21 @@ if (CONFIG.CHANNEL_ID || CONFIG.GROUP_ID) {
     console.log('🤖 AI Auto-Posting: DISABLED (no CHANNEL_ID or GROUP_ID)');
 }
 
+// ==================== 自动增长系统 ====================
+const AutoGrowthSystem = require('./autoGrowthSystem');
+const growthSystem = new AutoGrowthSystem(bot);
+growthSystem.startAllTasks();
+console.log('📈 Auto Growth System: ENABLED');
+console.log('   Daily Tasks:');
+console.log('   - 09:00: Channel outreach (10 channels)');
+console.log('   - 11:00: Group sharing (5 groups)');
+console.log('   - 14:00: Reddit post generation');
+console.log('   - 16:00: Group sharing round 2');
+console.log('   - 20:00: Daily report');
+
 // 导出供其他地方使用
 module.exports.autoPoster = autoPoster;
 module.exports.contentMaster = contentMaster;
+module.exports.growthSystem = growthSystem;
 
 } // end of startBot()

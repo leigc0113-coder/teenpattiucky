@@ -1,0 +1,77 @@
+{
+  "channels": [
+    {
+      "name": "@india_gaming_official",
+      "subscribers": 5000,
+      "contact": "@admin_username",
+      "category": "gaming",
+      "contacted": false,
+      "contactedAt": null,
+      "response": null
+    },
+    {
+      "name": "@earn_money_online_in",
+      "subscribers": 8000,
+      "contact": "@owner_username",
+      "category": "earning",
+      "contacted": false,
+      "contactedAt": null,
+      "response": null
+    },
+    {
+      "name": "@teen_patti_lovers",
+      "subscribers": 12000,
+      "contact": "@mod_username",
+      "category": "teenpatti",
+      "contacted": false,
+      "contactedAt": null,
+      "response": null
+    },
+    {
+      "name": "@india_online_jobs",
+      "subscribers": 15000,
+      "contact": "@admin",
+      "category": "jobs",
+      "contacted": false,
+      "contactedAt": null,
+      "response": null
+    }
+  ],
+  "groups": [
+    {
+      "id": "-1001234567890",
+      "name": "Teen Patti Players India",
+      "members": 2500,
+      "category": "teenpatti",
+      "lastPosted": null,
+      "status": "active"
+    },
+    {
+      "id": "-1000987654321",
+      "name": "Online Earning India",
+      "members": 5000,
+      "category": "earning",
+      "lastPosted": null,
+      "status": "active"
+    },
+    {
+      "id": "-1001122334455",
+      "name": "Gaming Community India",
+      "members": 3200,
+      "category": "gaming",
+      "lastPosted": null,
+      "status": "active"
+    }
+  ],
+  "reddit": {
+    "subreddits": [
+      "beermoneyindia",
+      "India",
+      "IndianGaming",
+      "beermoney",
+      "sidehustle"
+    ],
+    "lastPosted": null,
+    "postsRemaining": 3
+  }
+}
