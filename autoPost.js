@@ -37,12 +37,18 @@ class AutoPoster {
 
     async getPoolData() {
         try {
+            console.log('[AUTO_POST] Getting pool data...');
             const pool = await PoolService.getTodayPool();
-            return {
-                amount: pool?.finalAmount || pool?.amount || 0,
-                participants: pool?.participantCount || pool?.participants || 0
-            };
+            console.log('[AUTO_POST] Raw pool data:', JSON.stringify(pool));
+            
+            const amount = pool?.finalAmount || pool?.amount || pool?.totalAmount || 0;
+            const participants = pool?.participantCount || pool?.participants || 0;
+            
+            console.log(`[AUTO_POST] Parsed data: amount=${amount}, participants=${participants}`);
+            
+            return { amount, participants };
         } catch (error) {
+            console.error('[AUTO_POST] getPoolData error:', error);
             return { amount: 0, participants: 0 };
         }
     }
