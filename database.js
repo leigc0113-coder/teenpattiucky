@@ -1,54 +1,159 @@
 /**
  * ============================================================
- * 数据库模块 (database.js)
+ * MongoDB 数据库模块 (database-mongodb.js)
  * ============================================================
  * 
- * JSON文件存储
+ * 使用 MongoDB Atlas 替代 JSON 文件存储
+ * API 与 database.js 完全兼容
  */
 
-const fs = require('fs').promises;
-const path = require('path');
+const mongoose = require('mongoose');
 
-const DATA_DIR = path.join(__dirname, 'data');
+// 定义 Schema
+const UserSchema = new mongoose.Schema({
+    telegramId: Number,
+    gameId: String,
+    balance: { type: Number, default: 0 },
+    tierLevel: { type: Number, default: 0 },
+    vipLevel: { type: Number, default: 0 },
+    vipExpireDate: String,
+    inviteCount: { type: Number, default: 0 },
+    invitedBy: Number,
+    createdAt: String,
+    lastCheckin: String,
+    checkinCount: { type: Number, default: 0 }
+}, { collection: 'users' });
+
+const TierIdentitySchema = new mongoose.Schema({
+    userId: Number,
+    gameId: String,
+    tierId: String,
+    level: Number,
+    tierName: String,
+    number: String,
+    assignedAt: String,
+    expireDate: String
+}, { collection: 'tierIdentities' });
+
+const TierNumberPoolSchema = new mongoose.Schema({
+    id: String,
+    level: Number,
+    tierName: String,
+    number: String,
+    status: { type: String, default: 'FREE' },
+    userId: { type: Number, default: null },
+    assignedAt: { type: String, default: null },
+    coolingEndDate: { type: String, default: null }
+}, { collection: 'tierNumberPool' });
+
+const LotteryNumberSchema = new mongoose.Schema({
+    id: String,
+    userId: Number,
+    gameId: String,
+    tierId: String,
+    level: Number,
+    number: String,
+    type: String,
+    createdAt: String,
+    drawDate: String,
+    status: { type: String, default: 'ACTIVE' }
+}, { collection: 'lotteryNumbers' });
+
+const RechargeSchema = new mongoose.Schema({
+    id: String,
+    userId: Number,
+    gameId: String,
+    amount: Number,
+    tier: Number,
+    utrNumber: String,
+    screenshot: String,
+    status: { type: String, default: 'PENDING' },
+    createdAt: String,
+    processedAt: String,
+    processedBy: Number
+}, { collection: 'recharges' });
+
+const PoolSchema = new mongoose.Schema({
+    id: String,
+    date: String,
+    totalAmount: Number,
+    tierAmounts: Object,
+    status: { type: String, default: 'ACTIVE' }
+}, { collection: 'pools' });
+
+const WinnerSchema = new mongoose.Schema({
+    id: String,
+    drawDate: String,
+    tier: Number,
+    tierName: String,
+    prize: Number,
+    winner: {
+        telegramId: Number,
+        gameId: String,
+        tierId: String,
+        number: String
+    },
+    createdAt: String
+}, { collection: 'winners' });
+
+const InviteRecordSchema = new mongoose.Schema({
+    id: String,
+    inviterId: Number,
+    inviteeId: Number,
+    inviteeGameId: String,
+    status: { type: String, default: 'PENDING' },
+    reward: { type: Number, default: 0 },
+    createdAt: String,
+    completedAt: String
+}, { collection: 'inviteRecords' });
+
+const CheckinSchema = new mongoose.Schema({
+    id: String,
+    userId: Number,
+    date: String,
+    reward: Number,
+    consecutiveDays: Number,
+    createdAt: String
+}, { collection: 'checkins' });
 
 class Database {
     constructor() {
-        this.files = {
-            users: path.join(DATA_DIR, 'users.json'),
-            tierIdentities: path.join(DATA_DIR, 'tierIdentities.json'),
-            tierNumberPool: path.join(DATA_DIR, 'tierNumberPool.json'),
-            lotteryNumbers: path.join(DATA_DIR, 'lotteryNumbers.json'),
-            recharges: path.join(DATA_DIR, 'recharges.json'),
-            pools: path.join(DATA_DIR, 'pools.json'),
-            winners: path.join(DATA_DIR, 'winners.json'),
-            inviteRecords: path.join(DATA_DIR, 'inviteRecords.json'),
-            checkins: path.join(DATA_DIR, 'checkins.json')
-        };
+        this.models = {};
         this.cache = {};
     }
 
     async init() {
-        try {
-            await fs.mkdir(DATA_DIR, { recursive: true });
-        } catch (e) {}
-
-        for (const [key, filePath] of Object.entries(this.files)) {
-            try {
-                await fs.access(filePath);
-            } catch {
-                await fs.writeFile(filePath, JSON.stringify([], null, 2));
-            }
+        // 连接 MongoDB
+        const uri = process.env.MONGODB_URI;
+        if (!uri) {
+            throw new Error('MONGODB_URI environment variable is not set');
         }
 
+        await mongoose.connect(uri);
+        console.log('✅ MongoDB 连接成功');
+
+        // 初始化模型
+        this.models = {
+            users: mongoose.model('User', UserSchema),
+            tierIdentities: mongoose.model('TierIdentity', TierIdentitySchema),
+            tierNumberPool: mongoose.model('TierNumberPool', TierNumberPoolSchema),
+            lotteryNumbers: mongoose.model('LotteryNumber', LotteryNumberSchema),
+            recharges: mongoose.model('Recharge', RechargeSchema),
+            pools: mongoose.model('Pool', PoolSchema),
+            winners: mongoose.model('Winner', WinnerSchema),
+            inviteRecords: mongoose.model('InviteRecord', InviteRecordSchema),
+            checkins: mongoose.model('Checkin', CheckinSchema)
+        };
+
         await this.initTierNumberPool();
-        console.log('✅ 数据库初始化完成');
+        console.log('✅ MongoDB 数据库初始化完成');
     }
 
     async initTierNumberPool() {
         const CONFIG = require('./config');
-        const pool = await this.getAll('tierNumberPool');
+        const count = await this.models.tierNumberPool.countDocuments();
         
-        if (pool.length === 0) {
+        if (count === 0) {
             const tierNumbers = [];
             for (let level = 1; level <= 10; level++) {
                 const [tierName, number] = CONFIG.TIER_NAMES[level];
@@ -63,7 +168,7 @@ class Database {
                     coolingEndDate: null
                 });
             }
-            await this.save('tierNumberPool', tierNumbers);
+            await this.models.tierNumberPool.insertMany(tierNumbers);
         }
     }
 
@@ -71,67 +176,78 @@ class Database {
         if (this.cache[collection]) {
             return this.cache[collection];
         }
-        try {
-            const data = await fs.readFile(this.files[collection], 'utf8');
-            const parsed = JSON.parse(data);
-            this.cache[collection] = parsed;
-            return parsed;
-        } catch {
-            return [];
-        }
+        const Model = this.models[collection];
+        if (!Model) return [];
+        
+        const data = await Model.find().lean();
+        this.cache[collection] = data;
+        return data;
     }
 
     async save(collection, data) {
         this.cache[collection] = data;
-        await fs.writeFile(this.files[collection], JSON.stringify(data, null, 2));
+        // MongoDB 不需要手动保存整个集合
+        // 数据通过 insert/update 方法单独操作
     }
 
     async findById(collection, id) {
-        const data = await this.getAll(collection);
-        return data.find(item => item.id === id) || null;
+        const Model = this.models[collection];
+        if (!Model) return null;
+        return await Model.findOne({ id }).lean();
     }
 
     async findOne(collection, condition) {
-        const data = await this.getAll(collection);
-        return data.find(item => {
-            for (const [key, value] of Object.entries(condition)) {
-                if (item[key] !== value) return false;
-            }
-            return true;
-        }) || null;
+        const Model = this.models[collection];
+        if (!Model) return null;
+        return await Model.findOne(condition).lean();
     }
 
     async findAll(collection, condition) {
-        const data = await this.getAll(collection);
-        if (!condition) return data;
-        return data.filter(item => {
-            for (const [key, value] of Object.entries(condition)) {
-                if (item[key] !== value) return false;
-            }
-            return true;
-        });
+        const Model = this.models[collection];
+        if (!Model) return [];
+        if (!condition) {
+            return await Model.find().lean();
+        }
+        return await Model.find(condition).lean();
     }
 
     async insert(collection, item) {
-        const data = await this.getAll(collection);
-        data.push(item);
-        await this.save(collection, data);
+        const Model = this.models[collection];
+        if (!Model) return item;
+        
+        const doc = new Model(item);
+        await doc.save();
         return item;
     }
 
     async update(collection, id, updates) {
-        const data = await this.getAll(collection);
-        const index = data.findIndex(item => item.id === id);
-        if (index !== -1) {
-            data[index] = { ...data[index], ...updates };
-            await this.save(collection, data);
-            return data[index];
-        }
-        return null;
+        const Model = this.models[collection];
+        if (!Model) return null;
+        
+        const result = await Model.findOneAndUpdate(
+            { id },
+            { $set: updates },
+            { new: true }
+        ).lean();
+        
+        return result;
     }
 
     getTodayString() {
         return new Date().toISOString().split('T')[0];
+    }
+
+    // 额外方法：用于直接 MongoDB 操作（可选）
+    async deleteOne(collection, condition) {
+        const Model = this.models[collection];
+        if (!Model) return null;
+        return await Model.deleteOne(condition);
+    }
+
+    async deleteMany(collection, condition) {
+        const Model = this.models[collection];
+        if (!Model) return null;
+        return await Model.deleteMany(condition);
     }
 }
 
