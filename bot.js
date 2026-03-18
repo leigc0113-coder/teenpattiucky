@@ -230,12 +230,17 @@ bot.onText(/\/start(?:\s+(.+))?/, async (msg, match) => {
                 const isMember = await integration.isChannelMember(userId);
                 if (!isMember) {
                     await bot.sendMessage(chatId,
-                        '🎰 *Welcome to Teen Patti Lucky Draw!*\n\n' +
-                        '💰 Win real cash daily with FREE lottery numbers!\n\n' +
-                        '⚠️ *Please join our official channel first:*\n\n' +
+                        '🎰 *Teen Patti Lucky Draw* 🎰\n\n' +
+                        '╔═══════════════════════╗\n' +
+                        '║   💰 *DAILY JACKPOT* 💰   ║\n' +
+                        '║                       ║\n' +
+                        '║    *₹2,000-5,000*     ║\n' +
+                        '║      *CASH PRIZE*     ║\n' +
+                        '╚═══════════════════════╝\n\n' +
+                        '⚠️ *Join our channel to participate:*\n\n' +
                         '📢 Official Channel: ' + CONFIG.CHANNEL_ID + '\n' +
                         '💬 Player Group: ' + CONFIG.GROUP_ID + '\n\n' +
-                        '👆 Click the links above to join, then click /start again',
+                        '👆 Tap the links above, then click /start',
                         { 
                             parse_mode: 'Markdown',
                             reply_markup: {

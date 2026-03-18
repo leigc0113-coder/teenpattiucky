@@ -101,40 +101,80 @@ class ChannelGroupBotIntegration {
         const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
         const isWeekend = [0, 6].includes(new Date().getDay());
         const poolAmount = isWeekend ? '₹5,000' : '₹2,000';
+        const poolNumber = isWeekend ? '5000' : '2000';
         
-        // 构建吸引人的欢迎消息
+        // 构建吸引人的欢迎消息 - 突出奖金金额
         let welcomeMsg = 
-            '🎰 *Welcome to Teen Patti Lucky Draw!*\n\n' +
-            '💰 *Daily Cash Giveaway!*\n' +
-            `Today's Prize Pool: *${poolAmount}*\n` +
-            '⏰ Draw Time: *21:00 IST*\n\n' +
-            '✨ *What You Get:*\n' +
-            '🎁 FREE lottery numbers when you join\n' +
-            '💸 Real cash prizes via UPI daily\n' +
-            '🏆 Higher chances with more numbers\n\n';
+            '🎰 *Teen Patti Lucky Draw* 🎰\n\n';
         
-        // 添加参与步骤
+        // 🔥 超大奖金展示区域
         welcomeMsg += 
-            '📋 *How to Win:*\n' +
-            '1️⃣ Click "Join Now" below\n' +
+            '╔═══════════════════════╗\n' +
+            '║   💰 *DAILY JACKPOT* 💰   ║\n' +
+            '║                       ║\n' +
+            `║    *₹${poolNumber}*    ║\n` +
+            '║      *CASH PRIZE*     ║\n' +
+            '╚═══════════════════════╝\n\n';
+        
+        // 周末双倍提示
+        if (isWeekend) {
+            welcomeMsg += 
+                '🎉 *WEEKEND DOUBLE PRIZE!* 🎉\n' +
+                '🔥 Regular day: ₹2,000\n' +
+                '⚡ Weekend bonus: ₹5,000\n\n';
+        }
+        
+        // 奖金分布 - 让用户看到具体能赢多少
+        welcomeMsg += 
+            '🏆 *PRIZE BREAKDOWN:*\n' +
+            '├─ 🥇 *1st Prize:* ₹' + (isWeekend ? '2,500' : '1,000') + ' (50%)\n' +
+            '├─ 🥈 *2nd Prize:* ₹' + (isWeekend ? '1,500' : '600') + ' (30%)\n' +
+            '└─ 🥉 *3rd Prize:* ₹' + (isWeekend ? '1,000' : '400') + ' (20%)\n\n';
+        
+        // 开奖时间倒计时
+        welcomeMsg += 
+            '⏰ *NEXT DRAW:* 21:00 IST\n' +
+            '📅 *Daily Draws - 365 Days/Year*\n\n';
+        
+        // 你能买什么 - 增加真实感
+        welcomeMsg += 
+            '💡 *What can you buy with ₹' + poolNumber + '?*\n' +
+            '• 🍔 ' + (isWeekend ? '25' : '10') + ' McDonald\'s meals\n' +
+            '• 📱 ' + (isWeekend ? '2 months' : '1 month') + ' mobile recharge\n' +
+            '• 🎮 Premium game credits\n' +
+            '• 💸 Direct UPI transfer!\n\n';
+        
+        // 参与福利
+        welcomeMsg += 
+            '✨ *Why Join?*\n' +
+            '✅ *FREE* entry - No purchase needed\n' +
+            '🎁 *FREE* lottery numbers daily\n' +
+            '💸 *Real cash* via UPI instantly\n' +
+            '📈 More numbers = Higher win chance\n\n';
+        
+        // 参与步骤 - 简化并突出行动
+        welcomeMsg += 
+            '📱 *How to Join (30 seconds):*\n' +
+            '1️⃣ Tap "🎮 JOIN NOW" below\n' +
             '2️⃣ Enter your Game ID\n' +
             '3️⃣ Send screenshot\n' +
-            '4️⃣ Get lucky numbers!\n\n';
+            '4️⃣ Get your lucky numbers! 🎲\n\n';
         
-        // 社群状态
+        // 社群状态 - 更具吸引力
         if (!isChannelMember && !isGroupMember) {
             welcomeMsg += 
-                '🔔 *Join Our Community:*\n' +
-                'Stay updated with daily draws, winners, and exclusive bonuses!\n\n' +
-                '👇 *Click the buttons below to start:*';
+                '🎁 *BONUS:* Join our community for\n' +
+                '   exclusive tips & bonus numbers!\n\n' +
+                '👇 *Tap below to start winning:*';
         } else if (isChannelMember && isGroupMember) {
             welcomeMsg += 
-                '✅ *You are all set!*\n' +
-                'Click "Join Now" to get your lucky numbers!';
+                '✨ *You\'re ready to win!*\n' +
+                '👇 Tap "🎮 JOIN NOW" to enter!';
         } else {
             welcomeMsg += 
-                '📢 *Complete Your Setup:*\n' +
-                'Join remaining channels for full access!';
+                '⚡ *Almost there!* Join remaining\n' +
+                '   channels for bonus entries!\n\n' +
+                '👇 Tap below to continue:';
         }
 
         // 构建按钮（使用 @用户名 格式，不是数字ID）
@@ -156,9 +196,9 @@ class ChannelGroupBotIntegration {
             }]);
         }
         
-        // 始终显示 Join Now 按钮
+        // 始终显示 Join Now 按钮 - 更突出
         inline_keyboard.push([{ 
-            text: '🎮 Join Now', 
+            text: '🎮 JOIN NOW - GET FREE NUMBERS', 
             callback_data: 'join_now'
         }]);
 
