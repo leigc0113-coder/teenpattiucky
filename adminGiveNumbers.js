@@ -133,12 +133,17 @@ class AdminGiveNumbers {
     // 手动发号
     async giveNumbers(chatId, adminId, gameId, count, tierCode, reason) {
         try {
+            console.log(`[ADMIN] 开始发号: gameId=${gameId}, count=${count}, tier=${tierCode}`);
+            
             // 查找用户
             const user = await Database.findOne('users', { gameId });
             if (!user) {
+                console.error(`[ADMIN] ❌ 用户不存在: ${gameId}`);
                 await this.bot.sendMessage(chatId, `❌ User with GameID ${gameId} not found`);
                 return;
             }
+            
+            console.log(`[ADMIN] ✅ 找到用户: ${gameId}, userId=${user.id}, telegramId=${user.telegramId}`);
 
             // 验证等级代码
             const validTiers = ['F', 'S', 'G', 'D', 'C', 'V'];
@@ -157,21 +162,29 @@ class AdminGiveNumbers {
             }
 
             const today = new Date().toISOString().split('T')[0];
+            console.log(`[ADMIN] 今日日期: ${today}`);
 
             // 生成号码
+            console.log(`[ADMIN] 生成号码: tier=${tierCode}, count=${count}, date=${today}`);
             const numbers = await NumberTierService.generateTierNumbers(tierCode, count, today);
+            console.log(`[ADMIN] 生成完成: ${numbers.length} 个号码`);
 
             // 保存号码
+            console.log(`[ADMIN] 开始保存号码到数据库...`);
             for (const num of numbers) {
-                await Database.insert('lotteryNumbers', {
+                const record = {
                     ...num,
                     userId: user.id,
                     source: `admin_gift:${reason}`,
                     givenBy: String(adminId),
                     status: 'VALID',
                     createdAt: new Date().toISOString()
-                });
+                };
+                console.log(`[ADMIN] 保存号码: ${num.number}, userId=${user.id}, date=${num.date}`);
+                await Database.insert('lotteryNumbers', record);
+                console.log(`[ADMIN] ✅ 保存成功: ${num.number}`);
             }
+            console.log(`[ADMIN] 所有号码保存完成`);
 
             // 通知用户
             const tierNames = { F: 'Free', S: 'Silver', G: 'Gold', D: 'Diamond', C: 'Crown', V: 'VIP' };
