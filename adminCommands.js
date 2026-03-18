@@ -501,7 +501,26 @@ class AdminCommands {
             const { performDraw } = require('./bot');
             await performDraw();
             
-            await this.bot.sendMessage(chatId, '✅ 开奖完成！请查看中奖名单。');
+            // 获取今日开奖结果并显示给管理员
+            const today = new Date().toISOString().split('T')[0];
+            const winners = await Database.findAll('winners', { drawDate: today });
+            
+            if (winners && winners.length > 0) {
+                let winnerList = '🎉 *今日开奖结果*\n\n';
+                winnerList += `📅 日期: ${today}\n`;
+                winnerList += `🏆 中奖人数: ${winners.length}\n\n`;
+                
+                for (let i = 0; i < winners.length; i++) {
+                    const w = winners[i];
+                    const user = await Database.findById('users', w.userId);
+                    const rank = i === 0 ? '🥇' : i <= 2 ? '🥈' : '🥉';
+                    winnerList += `${rank} ${w.number} | ${user?.gameId || 'Unknown'} | ₹${w.prize?.toLocaleString() || 0}\n`;
+                }
+                
+                await this.bot.sendMessage(chatId, winnerList, { parse_mode: 'Markdown' });
+            } else {
+                await this.bot.sendMessage(chatId, '✅ 开奖完成！但没有找到中奖记录，请查看日志。');
+            }
         } catch (error) {
             console.error('[ADMIN] Draw error:', error);
             await this.bot.sendMessage(chatId, '❌ 开奖失败: ' + error.message);
