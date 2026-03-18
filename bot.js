@@ -28,6 +28,63 @@ const DrawService = require('./drawService');
 const InviteService = require('./inviteService');
 const RechargeService = require('./rechargeService');
 
+// ============================================================
+// 启动时清除测试数据（仅用于测试阶段）
+// ============================================================
+async function clearTestData() {
+    try {
+        console.log('🧹 [STARTUP] 开始清除测试数据...\n');
+        
+        // 等待数据库连接
+        await Database.init();
+        
+        const collectionsToClear = [
+            'users',
+            'lotteryNumbers', 
+            'tierIdentities',
+            'recharges',
+            'pools',
+            'winners',
+            'inviteRecords',
+            'checkins'
+        ];
+        
+        for (const collection of collectionsToClear) {
+            try {
+                const allDocs = await Database.getAll(collection);
+                console.log(`[CLEAR] ${collection}: ${allDocs.length} 条记录将被清除`);
+                
+                // 逐个删除
+                for (const doc of allDocs) {
+                    await Database.deleteOne(collection, { id: doc.id || doc._id });
+                }
+            } catch (err) {
+                console.log(`[CLEAR] ${collection}: 集合不存在或为空`);
+            }
+        }
+        
+        console.log('\n🎉 [STARTUP] 测试数据清除完成！\n');
+        
+    } catch (error) {
+        console.error('❌ [STARTUP] 清除数据失败:', error.message);
+    }
+}
+
+// 检查是否需要清除数据（通过环境变量控制）
+if (process.env.CLEAR_TEST_DATA === 'true') {
+    console.log('⚠️  [STARTUP] CLEAR_TEST_DATA=true，将在启动时清除所有测试数据');
+    clearTestData().then(() => {
+        console.log('✅ [STARTUP] 数据清除完成，继续启动应用...\n');
+        startBot();
+    }).catch(err => {
+        console.error('❌ [STARTUP] 启动失败:', err);
+        process.exit(1);
+    });
+} else {
+    // 正常启动
+    startBot();
+}
+
 // 引入历史记录服务
 const HistoryService = require('./historyService');
 
@@ -41,38 +98,33 @@ const ChannelGroupBotIntegration = require('./integration');
 const userState = new Map();
 const pendingScreenshots = new Map();
 
-const bot = new TelegramBot(CONFIG.BOT_TOKEN, { polling: true });
+// ==================== 启动函数 ====================
+function startBot() {
+    const bot = new TelegramBot(CONFIG.BOT_TOKEN, { polling: true });
 
-// 调试：打印配置值
-console.log('🔧 CONFIG DEBUG:');
-console.log('  CHANNEL_ID:', CONFIG.CHANNEL_ID);
-console.log('  GROUP_ID:', CONFIG.GROUP_ID);
-console.log('  REQUIRE_CHANNEL_SUBSCRIPTION:', CONFIG.REQUIRE_CHANNEL_SUBSCRIPTION);
+    // 调试：打印配置值
+    console.log('🔧 CONFIG DEBUG:');
+    console.log('  CHANNEL_ID:', CONFIG.CHANNEL_ID);
+    console.log('  GROUP_ID:', CONFIG.GROUP_ID);
+    console.log('  REQUIRE_CHANNEL_SUBSCRIPTION:', CONFIG.REQUIRE_CHANNEL_SUBSCRIPTION);
 
-// 初始化私域联动系统
-const integration = new ChannelGroupBotIntegration(bot);
+    // 初始化私域联动系统
+    const integration = new ChannelGroupBotIntegration(bot);
 
-// 初始化数据库
-let menuRouter;
-Database.init().then(async () => {
-    console.log('✅ Database initialized');
-    
-    // 初始化菜单路由系统
-    menuRouter = new MenuRouter(bot, UserService, TierService, VIPService);
-    console.log('✅ Menu router initialized');
-    
-    // 启动时检查并释放冷静期结束的号码（暂时禁用）
-    // try {
-    //     const releasedCount = await TierService.checkCoolingPeriod();
-    //     console.log(`✅ Released ${releasedCount} tier numbers from cooling period`);
-    // } catch (e) {
-    //     console.error('❌ Failed to check cooling period:', e);
-    // }
-}).catch(err => {
-    console.error('❌ Database init failed:', err);
-});
+    // 初始化数据库
+    let menuRouter;
+    Database.init().then(async () => {
+        console.log('✅ Database initialized');
+        
+        // 初始化菜单路由系统
+        menuRouter = new MenuRouter(bot, UserService, TierService, VIPService);
+        console.log('✅ Menu router initialized');
+        
+    }).catch(err => {
+        console.error('❌ Database init failed:', err);
+    });
 
-console.log('🤖 Bot Starting...');
+    console.log('🤖 Bot Starting...');
 
 // ==================== Helper Functions ====================
 
@@ -2273,3 +2325,5 @@ if (CONFIG.CHANNEL_ID || CONFIG.GROUP_ID) {
 // 导出供其他地方使用
 module.exports.autoPoster = autoPoster;
 module.exports.contentMaster = contentMaster;
+
+} // end of startBot()
