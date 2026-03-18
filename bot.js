@@ -2306,15 +2306,19 @@ async function performDraw() {
         });
 
         // 使用新的通知系统
-        console.log('[DRAW] Step 6: Sending notifications...');
+        console.log(`[DRAW] Step 6: Sending notifications...`);
+        console.log(`[DRAW] Step 6: Pool finalAmount before notify: ${pool?.finalAmount}`);
         const DrawNotification = require('./drawNotification');
         const notifier = new DrawNotification(bot);
-        await notifier.sendDrawResults(today, result.winners, pool.finalAmount);
+        const notifyPoolAmount = pool?.finalAmount || pool?.amount || 2750; // 使用默认值
+        console.log(`[DRAW] Step 6: Notifying with poolAmount: ${notifyPoolAmount}`);
+        await notifier.sendDrawResults(today, result.winners, notifyPoolAmount);
         console.log('[DRAW] Step 6: Notifications sent');
         
         // 推送到频道和群组
         console.log('[DRAW] Step 7: Announcing to channel/group...');
-        await integration.announceDrawResult(today, result.winners, pool.finalAmount);
+        console.log(`[DRAW] Step 7: Pool amount for announcement: ${notifyPoolAmount}`);
+        await integration.announceDrawResult(today, result.winners, notifyPoolAmount);
         console.log('[DRAW] Step 7: Announcement sent');
         
         console.log('[DRAW] ========================================');
