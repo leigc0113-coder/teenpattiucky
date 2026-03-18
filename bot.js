@@ -28,6 +28,15 @@ const DrawService = require('./drawService');
 const InviteService = require('./inviteService');
 const RechargeService = require('./rechargeService');
 
+// 引入历史记录服务
+const HistoryService = require('./historyService');
+
+// 引入菜单路由系统
+const MenuRouter = require('./menuRouter.i18n');
+
+// 引入私域联动系统
+const ChannelGroupBotIntegration = require('./integration');
+
 // ============================================================
 // 启动时清除测试数据（仅用于测试阶段）
 // ============================================================
@@ -84,15 +93,6 @@ if (process.env.CLEAR_TEST_DATA === 'true') {
     // 正常启动
     startBot();
 }
-
-// 引入历史记录服务
-const HistoryService = require('./historyService');
-
-// 引入菜单路由系统
-const MenuRouter = require('./menuRouter.i18n');
-
-// 引入私域联动系统
-const ChannelGroupBotIntegration = require('./integration');
 
 // 状态管理
 const userState = new Map();
