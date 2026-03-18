@@ -1,15 +1,8 @@
 /**
  * ============================================================
- * 双风格内容生成器 v4.0 - AI优化大师版
+ * 双风格内容生成器 v5.0 - 无分割线优化版
  * ============================================================
- * 
- * 频道 @telltest222：广告风格（专业、直接推销）
- * 群组 @tkgfg：社群风格（自然、朋友式、互动）
- * 
- * 集成：数据分析、视觉生成、节日营销、用户分层、A/B测试、情感分析
  */
-
-const ContentMaster = require('./contentMaster');
 
 class ContentGeneratorDual {
     constructor(config) {
@@ -19,49 +12,8 @@ class ContentGeneratorDual {
         this.channelId = config.CHANNEL_ID;
         this.groupId = config.GROUP_ID;
         this.gameLink = config.GAME_LINK || 'https://t.me/yourbot';
-        
-        // 初始化AI内容大师
-        this.master = new ContentMaster();
     }
 
-    // ============ 主生成接口（集成所有AI技能）============
-    
-    async generate(type, target, data = {}) {
-        // 使用ContentMaster获取最优内容
-        const optimalContent = await this.master.getOptimalContent(type, target, {
-            gameType: data.gameType,
-            poolData: data.poolData,
-            minutes: data.minutes,
-            festival: data.festival
-        });
-        
-        // 如果没有返回优化内容，使用基础模板
-        if (!optimalContent || !optimalContent.text) {
-            return this.generateBase(type, target, data);
-        }
-        
-        return optimalContent.text;
-    }
-
-    // 基础生成（备用）
-    generateBase(type, target, data) {
-        const prefix = target === 'group' ? 'group' : 'channel';
-        const methodName = `${prefix}_${type}`;
-        
-        if (typeof this[methodName] === 'function') {
-            return this[methodName](data);
-        }
-        
-        // 默认返回
-        return this.channel_morning(data);
-    }
-
-    // 追踪帖子表现（反馈给AI学习）
-    async trackPerformance(postId, metrics) {
-        await this.master.trackPostPerformance(postId, metrics);
-    }
-
-    // ============ 通用工具 ============
     randomPick(array) {
         return array[Math.floor(Math.random() * array.length)];
     }
@@ -74,384 +26,165 @@ class ContentGeneratorDual {
             time: ['⏰', '⏳', '⌛', '🕐', '⏱️'],
             game: ['🎮', '🎰', '🎲', '🎯', '🎪'],
             win: ['🏆', '🥇', '🎉', '🎊', '✨'],
-            luck: ['🍀', '🌟', '✨', '💫', '🎯'],
-            card: ['🃏', '🎴', '🀄', '♠️', '♥️']
+            luck: ['🍀', '🌟', '✨', '💫', '🎯']
         };
         return this.randomPick(emojis[category] || emojis.fire);
     }
 
     formatMoney(amount) {
+        if (!amount || amount === 0) return '₹0';
         return `₹${amount.toLocaleString('en-IN')}`;
-    }
-
-    getDivider(style = 'default') {
-        const dividers = {
-            default: '━━━━━━━━━━━━━━━━━━━━━',
-            double: '═════════════════════',
-            star: '✦✦✦✦✦✦✦✦✦✦✦✦✦✦✦',
-            dot: '•••••••••••••••••••',
-            wave: '〰️〰️〰️〰️〰️〰️〰️〰️〰️〰️'
-        };
-        return dividers[style] || dividers.default;
     }
 
     getTodayName() {
         return new Date().toLocaleDateString('en-IN', { weekday: 'long', timeZone: 'Asia/Kolkata' });
     }
 
-    // ============ 频道风格：广告/专业 ============
+    // ============ 频道风格：专业直接 ============
     
-    // 频道：早安开启
-    channelMorning(poolData) {
-        const divider = this.getDivider('star');
+    channel_morning(data) {
+        const poolData = data.poolData || { amount: 0, participants: 0 };
         
-        return `${this.randomEmoji('morning')} *Good Morning Winners!*
+        return `${this.randomEmoji('morning')} Good Morning Champions!
 
-${divider}
+Ready to start your day with a win? Today's Lucky Draw is live!
 
-${this.randomEmoji('game')} *TODAY'S LUCKY DRAW*
-${this.randomEmoji('money')} Pool: \`${this.formatMoney(poolData?.amount || 0)}\`
-${this.randomEmoji('time')} Draw Time: \`21:00 IST\`
+💰 Current Pool: ${this.formatMoney(poolData.amount)}
+👥 Players Joined: ${poolData.participants}
+🎁 Daily Cash Prizes via UPI
+⏰ Draw Time: 21:00 IST
 
-${divider}
+${poolData.amount > 2000 ? '🔥 Weekend bonus activated! Extra 30% prize boost!' : '✨ Join now for your chance to win real cash!'}
 
-${this.randomEmoji('fire')} *WHILE YOU WAIT:*
+Tap "Join Now" to get your lucky numbers! 👇
 
-*Play our hot games!*
+${this.gameLink}
 
-✈️ _Aviator_ — 100x multiplier
-🐉 _Dragon vs Tiger_ — 50/50 wins  
-🎰 _Slots_ — ₹5 Lakh jackpot
-
-${divider}
-
-📲 [Download ${this.appName}](${this.gameLink})
-
-#TeenPattiMaster #LuckyDraw #WinBig`;
+#TeenPattiLucky #DailyDraw #WinCash`;
     }
 
-    // 频道：游戏推荐
-    channelGamePost(gameType) {
-        const divider = this.getDivider('fire');
-        
-        const games = {
-            aviator: {
-                title: 'Aviator ✈️',
-                features: ['100x multiplier', 'Cash out anytime', '15-sec rounds'],
-                highlight: 'High stakes, high rewards!'
-            },
-            dragon: {
-                title: 'Dragon vs Tiger 🐉⚡',
-                features: ['10-sec rounds', '50/50 chance', '10x on tie'],
-                highlight: 'Fastest game - perfect for quick wins!'
-            },
-            slots: {
-                title: 'Wealth Slot 💎',
-                features: ['Progressive jackpot', 'Free spins', 'Bonus rounds'],
-                highlight: `Current jackpot: ${this.formatMoney(500000)}+!`
-            },
-            chicken: {
-                title: 'Chicken Road 🐔',
-                features: ['7 steps = 10x', '15 steps = 100x', 'Strategy game'],
-                highlight: 'Most addictive game this month!'
-            },
-            teenpatti: {
-                title: 'Teen Patti 🇮🇳',
-                features: ['1M+ players', 'Tournaments', '₹1 Lakh pools'],
-                highlight: 'India\'s favorite card game!'
-            }
-        };
-
-        const game = games[gameType] || games.aviator;
-
-        return `${this.randomEmoji('game')} *GAME SPOTLIGHT: ${game.title}*
-
-${divider}
-
-*Why players LOVE it:*
-${game.features.map(f => `• _${f}_`).join('\n')}
-
-${this.randomEmoji('win')} *${game.highlight}*
-
-${divider}
-
-🎮 [Play FREE](${this.gameLink})
-
-#${gameType === 'dragon' ? 'DragonVsTiger' : gameType === 'aviator' ? 'Aviator' : 'Slots'} #WinBig`;
-    }
-
-    // 频道：技巧攻略
-    channelTipsPost() {
-        const divider = this.getDivider('double');
-        
-        const tips = [
-            {
-                game: 'Aviator ✈️',
-                title: 'The 3-Round Rule',
-                content: 'Watch 3 rounds before betting. Identify the pattern, then strike!'
-            },
-            {
-                game: 'Dragon vs Tiger 🐉',
-                title: 'The Streak Strategy',
-                content: 'If Dragon wins 3x in a row, bet on Tiger next. Patterns matter!'
-            },
-            {
-                game: 'Slots 💎',
-                title: 'Timing is Everything',
-                content: 'Jackpots hit every 2-3 hours. Watch when it last hit!'
-            }
-        ];
-
-        const tip = this.randomPick(tips);
-
-        return `${this.randomEmoji('fire')} *PRO TIP: ${tip.title}*
-
-${divider}
-
-*${tip.game}*
-
-_${tip.content}_
-
-${divider}
-
-${this.randomEmoji('win')} *Winners use strategy, not just luck!*
-
-Practice FREE in ${this.appName}:
-📲 [Download Now](${this.gameLink})
-
-#ProTips #WinningStrategy`;
-    }
-
-    // 频道：奖池更新
-    channelPoolUpdate(poolData) {
-        const divider = this.getDivider('money');
+    channel_pool(data) {
+        const poolData = data.poolData || { amount: 0, participants: 0 };
         const hoursLeft = 21 - new Date().getHours();
         
-        return `${this.randomEmoji('money')} *POOL UPDATE*
+        return `${this.randomEmoji('money')} Pool Update!
 
-${divider}
+The prize pool keeps growing! More players = Bigger prizes!
 
-${this.randomEmoji('money')} *Pool Amount:* \`${this.formatMoney(poolData?.amount || 0)}\`
-👥 *Players:* \`${poolData?.participants || 0}\`
-⏰ *Draw in:* \`${hoursLeft} hours\`
+💰 Current Pool: ${this.formatMoney(poolData.amount)}
+👥 Active Players: ${poolData.participants}
+⏰ Draw in: ${hoursLeft} hours
 
-${divider}
+${hoursLeft <= 3 ? '🔥 FINAL HOURS! Grab your numbers before 21:00 IST!' : '✨ Pool growing fast! Join the action now!'}
 
-${hoursLeft <= 3 ? `${this.randomEmoji('fire')} *FINAL HOURS!* Don't miss out!` : '*Pool growing fast!* 🔥'}
+Entry Options:
+• Free: 1 lucky number
+• ₹100: 2 numbers
+• ₹500: 4 numbers  
+• ₹2000: 6 numbers
+• ₹5000: 8 numbers
+• ₹20000: 12 VIP numbers
 
-${this.randomEmoji('game')} *Bored waiting? Play our games!*
+👉 Join Now: ${this.gameLink}
 
-✈️ _Aviator_ | 🐉 _Dragon vs Tiger_ | 🎰 _Slots_
-
-${divider}
-
-👉 [Join Now](${this.gameLink})
-
-#LuckyDraw #PlayAndWin`;
+#LuckyDraw #CashPrizes #PlayAndWin`;
     }
 
-    // 频道：倒计时
-    channelCountdown(minutesLeft, poolData) {
-        const divider = this.getDivider('time');
-        const urgency = minutesLeft <= 30 ? '⏰ *FINAL 30 MINUTES!*' : 
-                       minutesLeft <= 60 ? '🔥 *LAST HOUR!*' : '⏳ *Time is running out!*';
+    channel_countdown(data) {
+        const poolData = data.poolData || { amount: 0, participants: 0 };
+        const minutes = data.minutes || 60;
+        
+        const urgency = minutes <= 30 ? '⏰ FINAL 30 MINUTES!' : 
+                       minutes <= 60 ? '🔥 LAST HOUR!' : '⏳ Time is running out!';
 
         return `${urgency}
 
-${divider}
+The draw is happening soon! Don't miss your chance to win!
 
-🎱 *Pool:* \`${this.formatMoney(poolData?.amount || 0)}\` ${this.randomEmoji('money')}
-👥 *\`${poolData?.participants || 0}\` players competing*
+🎱 Pool Amount: ${this.formatMoney(poolData.amount)}
+👥 ${poolData.participants} players competing
 
-${minutesLeft <= 30 ? '⚡ *Last chance to join!*' : '✅ *Still time to get your numbers!*'}
+${minutes <= 30 ? '⚡ Last chance to join! Numbers closing soon!' : '✅ Still time to get your lucky numbers!'}
 
-${divider}
+💰 Entry: ₹100 - ₹20,000
+🎫 Get 2-12 lucky numbers based on entry
 
-💰 *₹100-₹20,000 = 2-12 lucky numbers*
+👉 Join Now: ${this.gameLink}
 
-${divider}
-
-👉 [Join Now](${this.gameLink})
-
-#FinalCall #BigWin`;
+#FinalCall #BigWin #LastChance`;
     }
 
-    // 频道：开奖结果
-    channelWinners(poolData) {
-        const divider = this.getDivider('star');
+    channel_winners(data) {
+        const poolData = data.poolData || { amount: 0, participants: 0 };
         
-        return `${this.randomEmoji('win')} *CONGRATULATIONS!*
+        return `${this.randomEmoji('win')} Congratulations Winners!
 
-${divider}
+🏆 Draw Results - ${this.getTodayName()}
 
-🏆 *DRAW RESULTS - ${this.getTodayName().toUpperCase()}*
+💰 Total Pool: ${this.formatMoney(poolData.amount)}
+🎉 Winners have been notified!
 
-💰 *Total Pool: ${this.formatMoney(poolData?.amount || 0)}*
-🎉 *Congratulations to all winners!*
+Missed out? Don't worry! Tomorrow's draw starts fresh at 21:00 IST with a guaranteed ₹1,000 pool!
 
-${divider}
+While you wait, try our games:
+✈️ Aviator - Multiplier madness
+🐉 Dragon vs Tiger - 50/50 thrills  
+🎰 Slots - Progressive jackpots
 
-*Missed out? Don't worry!* 🎮
-Play games in ${this.appName} while waiting for tomorrow!
+📲 Play FREE: ${this.gameLink}
 
-${divider}
-
-📲 [Download ${this.appName}](${this.gameLink})
-
-#Winners #Congratulations`;
+#Winners #Congratulations #NextDraw`;
     }
 
-    // 频道：睡前
-    channelNight() {
-        const divider = this.getDivider('dot');
-        
-        return `${this.randomEmoji('morning')} *Good Night Winners!*
+    channel_night(data) {
+        return `${this.randomEmoji('morning')} Good Night Winners!
 
-${divider}
+Rest well, champions! Tomorrow brings another chance to win big!
 
-🎱 *Tomorrow's Draw*
-💰 Starting Pool: \`₹1,000\`
-⏰ Draw: \`21:00 IST\`
+🎱 Tomorrow's Draw Details:
+💰 Starting Pool: ₹1,000 guaranteed
+⏰ Draw Time: 21:00 IST sharp
+✨ Weekend bonus on Sat/Sun (+30% extra)
 
-*Set your alarm!* ⏰
+Set your alarm and join early for the best numbers!
 
-${divider}
+Sweet dreams and see you tomorrow! ${this.randomEmoji('luck')}
 
-*Before sleep...* 🎮
-_One quick game of Aviator?_
-Who knows, you might wake up richer! 💰
+${this.gameLink}
 
-🎰 [Play FREE](${this.gameLink})
-
-${divider}
-
-*Sweet dreams & big wins!* ${this.randomEmoji('luck')}
-
-#GoodNight #DreamBig`;
+#GoodNight #SeeYouTomorrow #DreamBig`;
     }
 
-    // ============ 群组风格：社群/朋友 ============
+    // ============ 群组风格：社群互动 ============
 
-    // 群组：早安开启
-    groupMorning(poolData) {
-        const greetings = ['Morning', 'Good morning', 'Rise and shine'];
-        const slang = ['Let\'s goooo', 'Here we go', 'Fire'];
+    group_morning(data) {
+        const poolData = data.poolData || { amount: 0, participants: 0 };
+        const greetings = ['Morning', 'Good morning', 'Rise and shine', 'What\'s up'];
         
         return `${this.randomPick(greetings)} everyone! ☀️
 
-${this.randomPick(slang)}! It's ${this.getTodayName()} and the pool is already looking good 👀
+Let's go! It's ${this.getTodayName()} and the pool is already looking good 👀
 
-*Today's numbers:*
-💰 Pool: \`${this.formatMoney(poolData?.amount || 0)}\`
-⏰ Draw: \`9 PM IST\`
+Today's numbers:
+💰 Pool: ${this.formatMoney(poolData.amount)}
+⏰ Draw: 9 PM IST
 
 What are you up to today? Drop a 🔥 if you're ready!
 
-Been playing any games while waiting? The Chicken Road update is wild 🐔
+How's everyone doing? Been playing any games while waiting?
 
 Catch you all later! 👋`;
     }
 
-    // 群组：游戏推荐
-    groupGamePost(gameType) {
-        const games = {
-            aviator: {
-                hook: 'Okay so I tried Aviator for the first time yesterday...',
-                vibe: 'The rush when that plane takes off is something else',
-                tip: 'Started small (₹50) and cashed at 2x. Small wins add up!',
-                ask: 'Who else plays this?'
-            },
-            dragon: {
-                hook: 'Quick game between meetings? Say less.',
-                vibe: '10 seconds and you know. Love the speed.',
-                tip: 'Saw someone hit 10x on a tie yesterday. Wild.',
-                ask: 'Dragon or Tiger - what\'s your pick usually?'
-            },
-            slots: {
-                hook: 'The jackpot on Wealth Slot right now is INSANE',
-                vibe: 'Just watching the numbers go up is addictive lol',
-                tip: 'Free spins during bonus rounds are where it\'s at',
-                ask: 'Anyone hit big on slots recently?'
-            },
-            chicken: {
-                hook: 'This game is actually genius',
-                vibe: '7 steps = sweet spot. 10x and you\'re out. Clean.',
-                tip: 'Greed gets you killed. Literally. Ask me how I know 😅',
-                ask: 'How far do you usually go?'
-            },
-            teenpatti: {
-                hook: 'The OG. Nothing beats a good Teen Patti session.',
-                vibe: 'Bluffing your way through is an art form',
-                tip: 'Reading the table is everything. Watch more, play smart.',
-                ask: 'Who\'s got the best poker face here? 🃏'
-            }
-        };
-
-        const game = games[gameType] || games.aviator;
-
-        return `${game.hook}
-
-${game.vibe}
-
-TBH ${game.tip}
-
-${game.ask}
-
-Drop your strategies below 👇 Always learning from you guys!`;
-    }
-
-    // 群组：技巧
-    groupTipsPost() {
-        const setups = [
-            'So I\'ve been playing for a while now and...',
-            'Real talk - saw someone lose big today because...',
-            'Small wins > big losses. Every time.'
-        ];
-
-        const tips = [
-            'The 3-round rule on Aviator actually works. Watch before you play.',
-            'Chasing losses is the fastest way to zero. Set a limit. Stick to it.',
-            'Cash out at 2x on Aviator. Boring but profitable.'
-        ];
-
-        const reactions = [
-            'Saved me so many times.',
-            'Hard to do in the moment but so important.',
-            'Not as exciting but my balance thanks me.'
-        ];
-
-        const asks = [
-            'What\'s your go-to strategy?',
-            'How do you stay disciplined?',
-            'Are you team "play safe" or team "go big"?'
-        ];
-
-        const i = Math.floor(Math.random() * setups.length);
-
-        return `${setups[i]}
-
-_${tips[i]}_
-
-${reactions[i]}
-
-${asks[i]}
-
-Sharing is caring! Drop your wisdom below 👇`;
-    }
-
-    // 群组：奖池更新
-    groupPoolUpdate(poolData) {
-        const reactions = [
-            'Pool is getting JUICY 🔥',
-            'Numbers looking good today 👀',
-            'The pot is stacking up nicely'
-        ];
+    group_pool(data) {
+        const poolData = data.poolData || { amount: 0, participants: 0 };
+        const reactions = ['Pool is getting JUICY 🔥', 'Numbers looking good today 👀', 'The pot is stacking up nicely'];
 
         return `${this.randomPick(reactions)}
 
 Current stats:
-💰 \`${this.formatMoney(poolData?.amount || 0)}\`
-👥 \`${poolData?.participants || 0}\` players in
+💰 ${this.formatMoney(poolData.amount)}
+👥 ${poolData.participants} players in
 
 NGL the energy today feels different
 
@@ -460,75 +193,66 @@ Feeling lucky today? How's your luck been?
 Been a minute since I hit something big. Manifesting it for tonight ✨`;
     }
 
-    // 群组：倒计时
-    groupCountdown(minutesLeft, poolData) {
-        const urgency = minutesLeft <= 30 ? 
+    group_countdown(data) {
+        const poolData = data.poolData || { amount: 0, participants: 0 };
+        const minutes = data.minutes || 60;
+        
+        const urgency = minutes <= 30 ? 
             'Okay this is it. Final half hour. No cap.' :
-            minutesLeft <= 60 ? 
+            minutes <= 60 ? 
             'One hour left. The tension is real.' :
             'Getting close now...';
 
         return `${urgency}
 
-Pool sitting at \`${this.formatMoney(poolData?.amount || 0)}\`
+Pool sitting at ${this.formatMoney(poolData.amount)}
 
-${this.randomPick(['Let\'s goooo!', 'Fire!', 'Vibes!'])}
+Let's goooo! 🔥
 
-Who\'s feeling lucky? Drop a 🍀
+Who's feeling lucky? Drop a 🍀
 
 Fingers crossed for everyone! 🤞`;
     }
 
-    // 群组：开奖结果
-    groupWinners(poolData) {
-        return `DRAW DONE! ${this.randomPick(['Let\'s goooo', 'Fire', 'Insane'])}!
+    group_winners(data) {
+        const poolData = data.poolPool || { amount: 0 };
+        
+        return `DRAW DONE! Let's goooo! 🔥
 
-🏆 Shoutout to today\'s winners!
+🏆 Shoutout to today's winners!
 
-Big win today was around ${this.formatMoney(poolData?.amount * 0.4 || 0)} 👀
+Big win today was around ${this.formatMoney(poolData.amount * 0.4)} 👀
 
-For everyone else - your time is coming! NGL consistency wins in the end
+For everyone else - your time is coming! Consistency wins in the end
 
-Who\'s already in for tomorrow? 👀`;
+Who's already in for tomorrow? 👀`;
     }
 
-    // 群组：睡前
-    groupNight() {
+    group_night(data) {
         return `Calling it a night! 🌙
 
 Tomorrow's draw resets at 9 PM
 Fresh start, fresh luck ✨
 
-How\'s everyone doing? What are you up to?
+How's everyone doing? What are you up to?
 
 Sweet dreams and big wins! 
 
 See you all tomorrow 👋`;
     }
 
-    // ============ 统一接口 ============
+    // ============ 主生成接口 ============
     
-    generate(type, target, data) {
-        // target: 'channel' 或 'group'
+    generate(type, target, data = {}) {
         const prefix = target === 'group' ? 'group' : 'channel';
+        const methodName = `${prefix}_${type}`;
         
-        const generators = {
-            morning: () => this[`${prefix}Morning`](data),
-            game: () => this[`${prefix}GamePost`](data?.gameType || 'aviator'),
-            tips: () => this[`${prefix}TipsPost`](data),
-            pool: () => this[`${prefix}PoolUpdate`](data),
-            countdown: () => this[`${prefix}Countdown`](data?.minutes || 60, data?.poolData),
-            winners: () => this[`${prefix}Winners`](data),
-            night: () => this[`${prefix}Night`](data)
-        };
-
-        const generator = generators[type];
-        if (!generator) {
-            console.error(`[ContentGenerator] Unknown type: ${type}`);
-            return '';
+        if (typeof this[methodName] === 'function') {
+            return this[methodName](data);
         }
-
-        return generator();
+        
+        // 默认返回早安
+        return this.channel_morning(data);
     }
 }
 
