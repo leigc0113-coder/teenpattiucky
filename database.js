@@ -25,7 +25,7 @@ const UserSchema = new mongoose.Schema({
 }, { collection: 'users' });
 
 const TierIdentitySchema = new mongoose.Schema({
-    userId: Number,
+    userId: mongoose.Schema.Types.Mixed,  // 支持 Number 或 String (如 "u_7054117110")
     gameId: String,
     tierId: String,
     level: Number,
@@ -41,14 +41,14 @@ const TierNumberPoolSchema = new mongoose.Schema({
     tierName: String,
     number: String,
     status: { type: String, default: 'FREE' },
-    userId: { type: Number, default: null },
+    userId: { type: mongoose.Schema.Types.Mixed, default: null },  // 支持 Number 或 String
     assignedAt: { type: String, default: null },
     coolingEndDate: { type: String, default: null }
 }, { collection: 'tierNumberPool' });
 
 const LotteryNumberSchema = new mongoose.Schema({
     id: String,
-    userId: Number,
+    userId: mongoose.Schema.Types.Mixed,  // 支持 Number 或 String
     gameId: String,
     tierId: String,
     level: Number,
@@ -61,7 +61,7 @@ const LotteryNumberSchema = new mongoose.Schema({
 
 const RechargeSchema = new mongoose.Schema({
     id: String,
-    userId: Number,
+    userId: mongoose.Schema.Types.Mixed,  // 支持 Number 或 String
     gameId: String,
     amount: Number,
     tier: Number,
@@ -70,7 +70,7 @@ const RechargeSchema = new mongoose.Schema({
     status: { type: String, default: 'PENDING' },
     createdAt: String,
     processedAt: String,
-    processedBy: Number
+    processedBy: mongoose.Schema.Types.Mixed  // 支持 Number 或 String
 }, { collection: 'recharges' });
 
 const PoolSchema = new mongoose.Schema({
@@ -88,7 +88,7 @@ const WinnerSchema = new mongoose.Schema({
     tierName: String,
     prize: Number,
     winner: {
-        telegramId: Number,
+        telegramId: mongoose.Schema.Types.Mixed,  // 支持 Number 或 String
         gameId: String,
         tierId: String,
         number: String
@@ -98,8 +98,8 @@ const WinnerSchema = new mongoose.Schema({
 
 const InviteRecordSchema = new mongoose.Schema({
     id: String,
-    inviterId: Number,
-    inviteeId: Number,
+    inviterId: mongoose.Schema.Types.Mixed,  // 支持 Number 或 String
+    inviteeId: mongoose.Schema.Types.Mixed,  // 支持 Number 或 String
     inviteeGameId: String,
     status: { type: String, default: 'PENDING' },
     reward: { type: Number, default: 0 },
@@ -109,7 +109,7 @@ const InviteRecordSchema = new mongoose.Schema({
 
 const CheckinSchema = new mongoose.Schema({
     id: String,
-    userId: Number,
+    userId: mongoose.Schema.Types.Mixed,  // 支持 Number 或 String
     date: String,
     reward: Number,
     consecutiveDays: Number,
