@@ -46,6 +46,7 @@ class LotteryService {
         
         // 保存到数据库
         const now = new Date().toISOString();
+        console.log(`[生成号码] 开始保存，userId=${userId}, date=${date}, 数量=${numbers.length}`);
         for (const num of numbers) {
             const record = {
                 ...num,
@@ -55,9 +56,11 @@ class LotteryService {
                 status: 'VALID',
                 createdAt: now
             };
-            console.log(`[生成号码] 保存号码:`, record.number);
+            console.log(`[生成号码] 保存号码: ${record.number}, userId=${record.userId}, date=${record.date}`);
             await Database.insert('lotteryNumbers', record);
+            console.log(`[生成号码] 号码保存成功: ${record.number}`);
         }
+        console.log(`[生成号码] 所有号码保存完成`);
         
         return {
             tier: tierConfig,
@@ -124,13 +127,35 @@ class LotteryService {
         console.log(`[查询] 获取用户 ${userId} 在 ${date} 的号码`);
         
         const allNumbers = await Database.getAll('lotteryNumbers');
+        console.log(`[查询] 数据库中共有 ${allNumbers.length} 个号码记录`);
+        
+        // 显示前5条记录用于调试
+        if (allNumbers.length > 0) {
+            console.log(`[查询] 数据库样例:`, allNumbers.slice(0, 3).map(n => ({
+                number: n.number,
+                userId: n.userId,
+                date: n.date,
+                status: n.status
+            })));
+        }
+        
         const userNumbers = allNumbers.filter(n => {
             // 将两者都转为字符串比较，避免类型不匹配
             const nUserId = String(n.userId || '');
             const queryUserId = String(userId || '');
-            return nUserId === queryUserId && 
-                n.date === date && 
+            const nDate = String(n.date || '');
+            const queryDate = String(date || '');
+            
+            const match = nUserId === queryUserId && 
+                nDate === queryDate && 
                 (n.status === 'VALID' || n.status === 'WON');
+            
+            // 调试：打印不匹配的原因
+            if (nUserId === queryUserId && !match) {
+                console.log(`[查询调试] 号码 ${n.number}: date匹配=${nDate === queryDate}, status=${n.status}`);
+            }
+            
+            return match;
         });
         
         console.log(`[查询] 找到 ${userNumbers.length} 个号码`);
