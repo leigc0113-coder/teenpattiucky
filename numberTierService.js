@@ -102,10 +102,14 @@ class NumberTierService {
      * @returns {Object} 分布统计
      */
     async getNumberDistribution(userId, date) {
-        const numbers = await Database.findAll('lotteryNumbers', {
-            userId,
-            date,
-            status: 'VALID'
+        // 获取所有号码，然后手动过滤，避免类型不匹配问题
+        const allNumbers = await Database.getAll('lotteryNumbers');
+        const numbers = allNumbers.filter(n => {
+            const nUserId = String(n.userId || '');
+            const queryUserId = String(userId || '');
+            return nUserId === queryUserId 
+                && n.date === date 
+                && n.status === 'VALID';
         });
         
         const distribution = {};

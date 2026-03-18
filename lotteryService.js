@@ -124,11 +124,14 @@ class LotteryService {
         console.log(`[查询] 获取用户 ${userId} 在 ${date} 的号码`);
         
         const allNumbers = await Database.getAll('lotteryNumbers');
-        const userNumbers = allNumbers.filter(n => 
-            n.userId === userId && 
-            n.date === date && 
-            (n.status === 'VALID' || n.status === 'WON')
-        );
+        const userNumbers = allNumbers.filter(n => {
+            // 将两者都转为字符串比较，避免类型不匹配
+            const nUserId = String(n.userId || '');
+            const queryUserId = String(userId || '');
+            return nUserId === queryUserId && 
+                n.date === date && 
+                (n.status === 'VALID' || n.status === 'WON');
+        });
         
         console.log(`[查询] 找到 ${userNumbers.length} 个号码`);
         return userNumbers;
