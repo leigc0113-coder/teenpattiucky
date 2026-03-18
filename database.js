@@ -84,9 +84,25 @@ const RechargeSchema = new mongoose.Schema({
 const PoolSchema = new mongoose.Schema({
     id: String,
     date: String,
+    baseAmount: Number,
+    bronzeContribution: Number,
+    silverContribution: Number,
+    bronzeRecharge: Number,
+    silverRecharge: Number,
+    bonus: Number,
+    finalAmount: Number,
     totalAmount: Number,
     tierAmounts: Object,
-    status: { type: String, default: 'ACTIVE' }
+    participantCount: Number,
+    isWeekend: Boolean,
+    isFestival: Boolean,
+    festivalName: String,
+    locked: { type: Boolean, default: false },
+    drawCompleted: { type: Boolean, default: false },
+    drawTime: String,
+    winners: Number,
+    status: { type: String, default: 'ACTIVE' },
+    createdAt: String
 }, { collection: 'pools' });
 
 const WinnerSchema = new mongoose.Schema({
