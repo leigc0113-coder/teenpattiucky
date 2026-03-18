@@ -1293,10 +1293,37 @@ async function processApproval(adminId, chatId, rechargeId, amount, messageId) {
         console.log(`[APPROVE] Approved: tier=${approveResult.tierConfig?.tier}, count=${approveResult.tierConfig?.count}`);
 
         const today = getTodayIST();
-        const user = await Database.findById('users', recharge.userId);
-        if (!user) {
-            throw new Error('User not found');
+        
+        // 调试：打印 recharge.userId
+        console.log(`[APPROVE] Debug: recharge.userId = ${recharge.userId}, type = ${typeof recharge.userId}`);
+        
+        // 尝试通过 id 查找用户
+        let user = await Database.findById('users', recharge.userId);
+        
+        // 如果找不到，尝试通过 telegramId 查找（兼容旧数据）
+        if (!user && recharge.userId) {
+            console.log(`[APPROVE] User not found by id, trying telegramId...`);
+            // 如果 userId 是 "u_12345" 格式，提取数字部分
+            const telegramIdMatch = String(recharge.userId).match(/u_(\d+)/);
+            if (telegramIdMatch) {
+                const telegramId = parseInt(telegramIdMatch[1]);
+                user = await Database.findOne('users', { telegramId });
+                console.log(`[APPROVE] Lookup by telegramId ${telegramId}: ${user ? 'Found' : 'Not found'}`);
+            } else {
+                // 直接尝试作为 telegramId 查找
+                const telegramId = parseInt(recharge.userId);
+                if (!isNaN(telegramId)) {
+                    user = await Database.findOne('users', { telegramId });
+                    console.log(`[APPROVE] Lookup by telegramId ${telegramId}: ${user ? 'Found' : 'Not found'}`);
+                }
+            }
         }
+        
+        if (!user) {
+            throw new Error(`User not found for userId: ${recharge.userId}`);
+        }
+        
+        console.log(`[APPROVE] Found user: id=${user.id}, telegramId=${user.telegramId}, gameId=${user.gameId}`);
 
         // 生成号码
         console.log(`[APPROVE] Generating numbers: user=${recharge.userId}, amount=${amount}`);
