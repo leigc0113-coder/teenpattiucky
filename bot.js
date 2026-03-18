@@ -333,8 +333,27 @@ bot.on('callback_query', async (query) => {
     
     // 如果是新菜单系统的回调，使用 MenuRouter 处理
     if (data.startsWith('menu_') || data.startsWith('action_')) {
+        // 等待 menuRouter 初始化完成
+        if (!menuRouter) {
+            console.log('[MENU] Menu router not ready yet, waiting...');
+            // 等待最多 3 秒
+            for (let i = 0; i < 30 && !menuRouter; i++) {
+                await new Promise(resolve => setTimeout(resolve, 100));
+            }
+        }
+        
         if (menuRouter) {
-            await menuRouter.handleCallback(query);
+            try {
+                await menuRouter.handleCallback(query);
+                return;
+            } catch (err) {
+                console.error('[MENU] Error handling callback:', err);
+                await bot.answerCallbackQuery(query.id, { text: '❌ Error, please try again' });
+                return;
+            }
+        } else {
+            console.error('[MENU] Menu router not available');
+            await bot.answerCallbackQuery(query.id, { text: '⏳ System initializing, please try again' });
             return;
         }
     }
