@@ -515,6 +515,202 @@ const MenuContent = {
     closeMenu: {
         en: { text: '❌ Close', callback_data: 'menu_close' },
         zh: { text: '❌ 关闭', callback_data: 'menu_close' }
+    },
+
+    // ==================== 用户准则 ====================
+    userRules: {
+        en: {
+            title: '📋 User Rules',
+            content:
+                '━━━━━━━━━━━━━━━━━━━\n' +
+                '*Rules & Guidelines*\n' +
+                '━━━━━━━━━━━━━━━━━━━\n\n' +
+                '*1. Account*\n' +
+                '• One account per user\n' +
+                '• Use real Game ID\n' +
+                '• No fake information\n\n' +
+                '*2. Participation*\n' +
+                '• FREE: 1 number per user\n' +
+                '• Recharge: Multiple times allowed\n' +
+                '• Numbers valid for the day\n\n' +
+                '*3. Conduct*\n' +
+                '• No cheating or bots\n' +
+                '• No multiple accounts\n' +
+                '• Respect other players',
+            buttons: [
+                [{ text: '🔙 Back', callback_data: 'menu_help_center' }]
+            ]
+        },
+        zh: {
+            title: '📋 用户准则',
+            content:
+                '━━━━━━━━━━━━━━━━━━━\n' +
+                '*规则与准则*\n' +
+                '━━━━━━━━━━━━━━━━━━━\n\n' +
+                '*1. 账号规则*\n' +
+                '• 每人限一个账号\n' +
+                '• 使用真实游戏ID\n' +
+                '• 禁止虚假信息\n\n' +
+                '*2. 参与规则*\n' +
+                '• 免费：每人限1个号码\n' +
+                '• 充值：可多次参与\n' +
+                '• 号码当日有效\n\n' +
+                '*3. 行为准则*\n' +
+                '• 禁止作弊或使用机器人\n' +
+                '• 禁止多账号操作\n' +
+                '• 尊重其他玩家',
+            buttons: [
+                [{ text: '🔙 返回', callback_data: 'menu_help_center' }]
+            ]
+        }
+    },
+
+    // ==================== 公平性 ====================
+    fairness: {
+        en: {
+            title: '⚖️ Fairness & Security',
+            content:
+                '━━━━━━━━━━━━━━━━━━━\n' +
+                '*How We Ensure Fairness*\n' +
+                '━━━━━━━━━━━━━━━━━━━\n\n' +
+                '*1. Random Draw*\n' +
+                '• Blockchain-verified randomness\n' +
+                '• Transparent selection process\n' +
+                '• All draws recorded\n\n' +
+                '*2. Number Weights*\n' +
+                '• Free: 1x base weight\n' +
+                '• Silver: 2x weight\n' +
+                '• Gold: 4x weight\n' +
+                '• Higher tier = higher chance\n\n' +
+                '*3. Security*\n' +
+                '• Data encrypted\n' +
+                '• MongoDB Atlas storage\n' +
+                '• Regular audits',
+            buttons: [
+                [{ text: '🔙 Back', callback_data: 'menu_help_center' }]
+            ]
+        },
+        zh: {
+            title: '⚖️ 公平性与安全',
+            content:
+                '━━━━━━━━━━━━━━━━━━━\n' +
+                '*我们如何确保公平*\n' +
+                '━━━━━━━━━━━━━━━━━━━\n\n' +
+                '*1. 随机开奖*\n' +
+                '• 区块链验证的随机性\n' +
+                '• 透明的选择过程\n' +
+                '• 所有开奖记录可查\n\n' +
+                '*2. 号码权重*\n' +
+                '• 免费：1倍基础权重\n' +
+                '• 白银：2倍权重\n' +
+                '• 黄金：4倍权重\n' +
+                '• 等级越高，中奖概率越高\n\n' +
+                '*3. 安全性*\n' +
+                '• 数据加密存储\n' +
+                '• MongoDB Atlas云端存储\n' +
+                '• 定期安全审计',
+            buttons: [
+                [{ text: '🔙 返回', callback_data: 'menu_help_center' }]
+            ]
+        }
+    },
+
+    // ==================== 法律声明 ====================
+    legal: {
+        en: {
+            title: '📜 Legal Disclaimer',
+            content:
+                '━━━━━━━━━━━━━━━━━━━\n' +
+                '*Terms of Service*\n' +
+                '━━━━━━━━━━━━━━━━━━━\n\n' +
+                '*1. Eligibility*\n' +
+                '• 18+ years old required\n' +
+                '• Valid Teen Patti account\n' +
+                '• Residents of allowed regions\n\n' +
+                '*2. Disclaimer*\n' +
+                '• Lottery is entertainment\n' +
+                '• No guaranteed winnings\n' +
+                '• Play responsibly\n\n' +
+                '*3. Rights*\n' +
+                '• We reserve the right to modify rules\n' +
+                '• Suspend accounts for violations\n' +
+                '• Void fraudulent entries',
+            buttons: [
+                [{ text: '🔙 Back', callback_data: 'menu_help_center' }]
+            ]
+        },
+        zh: {
+            title: '📜 法律声明',
+            content:
+                '━━━━━━━━━━━━━━━━━━━\n' +
+                '*服务条款*\n' +
+                '━━━━━━━━━━━━━━━━━━━\n\n' +
+                '*1. 参与资格*\n' +
+                '• 必须年满18岁\n' +
+                '• 拥有有效的Teen Patti账号\n' +
+                '• 来自允许参与的地区\n\n' +
+                '*2. 免责声明*\n' +
+                '• 抽奖仅供娱乐\n' +
+                '• 不保证中奖\n' +
+                '• 请理性参与\n\n' +
+                '*3. 权利保留*\n' +
+                '• 我们保留修改规则的权利\n' +
+                '• 违规账号将被暂停\n' +
+                '• 欺诈参与将被取消资格',
+            buttons: [
+                [{ text: '🔙 返回', callback_data: 'menu_help_center' }]
+            ]
+        }
+    },
+
+    // ==================== 责任博彩 ====================
+    responsible: {
+        en: {
+            title: '🎯 Responsible Gaming',
+            content:
+                '━━━━━━━━━━━━━━━━━━━\n' +
+                '*Play Responsibly*\n' +
+                '━━━━━━━━━━━━━━━━━━━\n\n' +
+                '*1. Set Limits*\n' +
+                '• Only spend what you can afford\n' +
+                '• Set daily/monthly budgets\n' +
+                '• Take breaks regularly\n\n' +
+                '*2. Warning Signs*\n' +
+                '• Spending more than planned\n' +
+                '• Chasing losses\n' +
+                '• Neglecting responsibilities\n\n' +
+                '*3. Help*\n' +
+                '• Contact support for self-exclusion\n' +
+                '• Seek help if needed\n' +
+                '• Remember: it\'s entertainment',
+            buttons: [
+                [{ text: '💬 Contact Support', callback_data: 'action_support' }],
+                [{ text: '🔙 Back', callback_data: 'menu_help_center' }]
+            ]
+        },
+        zh: {
+            title: '🎯 责任博彩',
+            content:
+                '━━━━━━━━━━━━━━━━━━━\n' +
+                '*理性参与*\n' +
+                '━━━━━━━━━━━━━━━━━━━\n\n' +
+                '*1. 设定限制*\n' +
+                '• 只花您能承受的钱\n' +
+                '• 设定每日/每月预算\n' +
+                '• 定期休息\n\n' +
+                '*2. 警示信号*\n' +
+                '• 花费超出计划\n' +
+                '• 试图追回损失\n' +
+                '• 忽视责任\n\n' +
+                '*3. 寻求帮助*\n' +
+                '• 联系客服申请自我排除\n' +
+                '• 需要时寻求专业帮助\n' +
+                '• 记住：这只是娱乐',
+            buttons: [
+                [{ text: '💬 联系客服', callback_data: 'action_support' }],
+                [{ text: '🔙 返回', callback_data: 'menu_help_center' }]
+            ]
+        }
     }
 };
 

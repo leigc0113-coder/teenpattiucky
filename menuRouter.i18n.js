@@ -104,6 +104,30 @@ class MenuRouter {
                 return;
             }
 
+            if (data === 'menu_user_rules') {
+                await this.showPage(chatId, messageId, 'userRules', lang);
+                await this.answerQuery(query);
+                return;
+            }
+
+            if (data === 'menu_fairness') {
+                await this.showPage(chatId, messageId, 'fairness', lang);
+                await this.answerQuery(query);
+                return;
+            }
+
+            if (data === 'menu_legal') {
+                await this.showPage(chatId, messageId, 'legal', lang);
+                await this.answerQuery(query);
+                return;
+            }
+
+            if (data === 'menu_responsible') {
+                await this.showPage(chatId, messageId, 'responsible', lang);
+                await this.answerQuery(query);
+                return;
+            }
+
             // 立即参与
             if (data === 'menu_join_now' || data === 'action_join_now') {
                 await this.showJoinOptions(chatId, messageId, lang);
