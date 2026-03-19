@@ -159,15 +159,34 @@ class RechargeService {
      * 获取用户今日已审核金额
      */
     async getTodayApprovedAmount(userId) {
-        const today = new Date().toISOString().split('T')[0];
+        // 使用 IST 时区获取今天的日期
+        const istString = new Date().toLocaleString('en-US', { 
+            timeZone: 'Asia/Kolkata',
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit'
+        });
+        const [month, day, year] = istString.split('/');
+        const today = `${year}-${month}-${day}`;
+        
+        console.log(`[RECHARGE] getTodayApprovedAmount: userId=${userId}, today=${today}`);
+        
         const recharges = await Database.findAll('recharges', {
             userId,
             status: 'APPROVED'
         });
 
-        return recharges
-            .filter(r => r.createdAt.startsWith(today))
-            .reduce((sum, r) => sum + r.amount, 0);
+        const todayAmount = recharges
+            .filter(r => {
+                // 使用 startsWith 匹配日期部分
+                const matches = r.createdAt.startsWith(today);
+                console.log(`[RECHARGE] Checking: ${r.id}, createdAt=${r.createdAt}, amount=${r.amount}, matches=${matches}`);
+                return matches;
+            })
+            .reduce((sum, r) => sum + (parseInt(r.amount) || 0), 0);
+            
+        console.log(`[RECHARGE] Today approved amount: ${todayAmount}`);
+        return todayAmount;
     }
     
     /**

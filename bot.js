@@ -1821,6 +1821,14 @@ bot.onText(/\/myaccount|My Account/, async (msg) => {
         if (tier) {
             msg_text += `🏆 *Tier: ${tier.displayName}*\n`;
             msg_text += `💰 Total Recharge: ₹${(tier.totalRecharge || 0).toLocaleString()}\n`;
+            
+            // 查询今日充值
+            console.log(`[ACCOUNT] Querying today recharge for user.id=${user.id}`);
+            const todayRecharges = await RechargeService.getTodayApprovedAmount(user.id);
+            console.log(`[ACCOUNT] Today recharge result: ${todayRecharges}`);
+            if (todayRecharges > 0) {
+                msg_text += `📅 Today Recharge: ₹${todayRecharges.toLocaleString()}\n`;
+            }
 
             if (tier.level < 10) {
                 const nextThreshold = CONFIG.TIER_THRESHOLDS[tier.level + 1];
