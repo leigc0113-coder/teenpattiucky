@@ -79,6 +79,13 @@ async function clearTestData() {
     }
 }
 
+// 状态管理
+const userState = new Map();
+const pendingScreenshots = new Map();
+
+// 防止重复启动
+let botInstance = null;
+
 // 检查是否需要清除数据（通过环境变量控制）
 if (process.env.CLEAR_TEST_DATA === 'true') {
     console.log('⚠️  [STARTUP] CLEAR_TEST_DATA=true，将在启动时清除所有测试数据');
@@ -94,14 +101,7 @@ if (process.env.CLEAR_TEST_DATA === 'true') {
     startBot();
 }
 
-// 状态管理
-const userState = new Map();
-const pendingScreenshots = new Map();
-
 // ==================== 启动函数 ====================
-// 防止重复启动
-let botInstance = null;
-
 function startBot() {
     if (botInstance) {
         console.log('⚠️  Bot already running, skipping duplicate start');
