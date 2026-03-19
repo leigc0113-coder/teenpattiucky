@@ -87,8 +87,14 @@ class TierService {
             identity = await this.createTierIdentity(userId);
         }
 
+        // 确保金额是数字
+        const numAmount = parseInt(amount) || 0;
+        console.log(`[TIER] Adding recharge: userId=${userId}, amount=${numAmount}, currentTotal=${identity.totalRecharge}`);
+
         // 累加充值金额
-        const newTotal = identity.totalRecharge + amount;
+        const newTotal = (identity.totalRecharge || 0) + numAmount;
+        
+        console.log(`[TIER] Updating totalRecharge: ${identity.totalRecharge} + ${numAmount} = ${newTotal}`);
         
         // 更新累计充值
         await Database.update('tierIdentities', identity.id, {
@@ -109,6 +115,7 @@ class TierService {
 
         // 重新获取更新后的身份
         identity = await this.getTierIdentity(userId);
+        console.log(`[TIER] New totalRecharge: ${identity.totalRecharge}`);
         return { 
             upgraded: false, 
             identity 

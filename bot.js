@@ -1555,7 +1555,9 @@ async function processApproval(adminId, chatId, rechargeId, amount, messageId) {
         }
 
         // 更新等级 - 使用 user.id 确保格式一致
+        console.log(`[APPROVE] Adding recharge: userId=${user.id}, amount=${amount}, type=${typeof amount}`);
         const tierResult = await TierService.addRecharge(user.id, amount);
+        console.log(`[APPROVE] Tier result:`, tierResult);
 
         // 检查VIP资格 - 使用 user.id
         await VIPService.processVIPCheck(user.id, today);
@@ -1785,20 +1787,18 @@ bot.onText(/\/myaccount|My Account/, async (msg) => {
         }
 
         const tier = await TierService.getTierIdentity(user.id);
-        console.log(`[ACCOUNT] Debug: tier = ${tier ? 'found' : 'not found'}`);
+        console.log(`[ACCOUNT] Tier:`, tier ? `level=${tier.level}, totalRecharge=${tier.totalRecharge}` : 'not found');
         
         const stats = await LotteryService.getUserNumberStats(user.id, today);
-        console.log(`[ACCOUNT] Debug: stats.totalCount = ${stats?.totalCount}`);
+        console.log(`[ACCOUNT] Stats: totalCount=${stats?.totalCount}`);
         
         const vipProgress = await VIPService.getVIPProgress(user.id);
 
         let pool = null;
         try {
-            // 每次查看都重新计算奖池（获取最新数据）
             pool = await PoolService.calculateDailyPool(today);
         } catch (e) {
             console.error('[ACCOUNT] Calculate pool failed:', e);
-            // 如果计算失败，尝试获取已存在的
             try {
                 pool = await PoolService.getTodayPool();
             } catch (e2) {
