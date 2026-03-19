@@ -1075,6 +1075,20 @@ bot.onText(/^\d{7}$/, async (msg) => {
 
         // ========== 免费参与流程 ==========
         if (state && state.step === 'waiting_free_gameid') {
+            // 检查该 Telegram ID 是否已经注册过（防止多账号）
+            const existingTelegramUser = await UserService.getUserByTelegramId(userId);
+            if (existingTelegramUser) {
+                await bot.sendMessage(chatId,
+                    '⚠️ *You already have an account!*\n\n' +
+                    `🎮 Your Game ID: ${existingTelegramUser.gameId}\n` +
+                    'You cannot register multiple accounts.\n\n' +
+                    'Use "My Account" to view your details.',
+                    { parse_mode: 'Markdown', ...getMainMenu() }
+                );
+                userState.delete(userId);
+                return;
+            }
+
             // 检查游戏ID是否已被使用
             const existingUser = await UserService.getUserByGameId(gameId);
             if (existingUser) {
@@ -1160,6 +1174,21 @@ bot.onText(/^\d{7}$/, async (msg) => {
             if (!screenshotData) {
                 await bot.sendMessage(chatId, '❌ Error: Screenshot not found. Please start over with /start');
                 userState.delete(userId);
+                return;
+            }
+
+            // 检查该 Telegram ID 是否已经注册过（防止多账号）
+            const existingTelegramUser = await UserService.getUserByTelegramId(userId);
+            if (existingTelegramUser) {
+                await bot.sendMessage(chatId,
+                    '⚠️ *You already have an account!*\n\n' +
+                    `🎮 Your Game ID: ${existingTelegramUser.gameId}\n` +
+                    'You cannot register multiple accounts.\n\n' +
+                    'Use "Recharge" button to recharge your existing account.',
+                    { parse_mode: 'Markdown', ...getMainMenu() }
+                );
+                userState.delete(userId);
+                pendingScreenshots.delete(userId);
                 return;
             }
 
@@ -1746,6 +1775,24 @@ bot.onText(/\/myaccount|My Account/, async (msg) => {
         console.log(`[ACCOUNT] Debug: user.id = ${user?.id}, type = ${typeof user?.id}`);
         console.log(`[ACCOUNT] Debug: user.telegramId = ${user?.telegramId}`);
         
+        // 获取该 Telegram ID 下的所有用户记录（处理多个 gameId 的情况）
+        const allUsers = await Database.findAll('users', { telegramId: userId });
+        console.log(`[ACCOUNT] Found ${allUsers.length} user record(s) for telegramId ${userId}`);
+        
+        // 汇总所有用户记录的充值金额
+        let totalRechargeAll = 0;
+        let allNumbers = [];
+        for (const u of allUsers) {
+            const uTier = await TierService.getTierIdentity(u.id);
+            if (uTier) {
+                totalRechargeAll += (uTier.totalRecharge || 0);
+            }
+            const uStats = await LotteryService.getUserNumberStats(u.id, today);
+            if (uStats.numbers) {
+                allNumbers = allNumbers.concat(uStats.numbers);
+            }
+        }
+
         const tier = await TierService.getTierIdentity(user.id);
         console.log(`[ACCOUNT] Debug: tier = ${tier ? 'found' : 'not found'}`);
         
@@ -1771,14 +1818,30 @@ bot.onText(/\/myaccount|My Account/, async (msg) => {
         let msg_text = '👤 *My Account*\n';
         msg_text += '━━━━━━━━━━━━━━━━\n\n';
 
+        // 显示所有关联的游戏ID
+        if (allUsers.length > 0) {
+            msg_text += `🎮 *Game ID${allUsers.length > 1 ? 's' : ''}:*\n`;
+            allUsers.forEach((u, idx) => {
+                msg_text += `  ${idx + 1}. ${u.gameId}${u.id === user.id ? ' ✓' : ''}\n`;
+            });
+            msg_text += '\n';
+        }
+
         if (tier) {
             msg_text += `🏆 *Tier: ${tier.displayName}*\n`;
-            msg_text += `💰 Total Recharge: ₹${(tier.totalRecharge || 0).toLocaleString()}\n`;
+            
+            // 显示汇总后的总充值金额
+            const displayRecharge = totalRechargeAll > 0 ? totalRechargeAll : (tier.totalRecharge || 0);
+            msg_text += `💰 Total Recharge: ₹${displayRecharge.toLocaleString()}`;
+            if (allUsers.length > 1 && totalRechargeAll > 0) {
+                msg_text += ` (combined ${allUsers.length} accounts)`;
+            }
+            msg_text += '\n';
 
             if (tier.level < 10) {
                 const nextThreshold = CONFIG.TIER_THRESHOLDS[tier.level + 1];
-                const remaining = nextThreshold - (tier.totalRecharge || 0);
-                msg_text += `📈 Next level: ₹${remaining.toLocaleString()}\n`;
+                const remaining = nextThreshold - displayRecharge;
+                msg_text += `📈 Next level: ₹${Math.max(0, remaining).toLocaleString()}\n`;
             } else {
                 msg_text += `🌟 Max Level!\n`;
             }
@@ -1794,9 +1857,11 @@ bot.onText(/\/myaccount|My Account/, async (msg) => {
 
         msg_text += '\n';
 
-        if (stats.totalCount > 0) {
+        // 汇总所有号码
+        if (allNumbers.length > 0 || stats.totalCount > 0) {
             msg_text += '🎫 *My Numbers:*\n';
-            msg_text += NumberTierService.formatNumbersDisplay(stats.numbers, true);
+            const displayNumbers = allNumbers.length > 0 ? allNumbers : stats.numbers;
+            msg_text += NumberTierService.formatNumbersDisplay(displayNumbers, true);
             msg_text += '\n\n';
         } else {
             msg_text += '🎫 *No numbers yet*\n';
@@ -1804,7 +1869,8 @@ bot.onText(/\/myaccount|My Account/, async (msg) => {
         }
 
         msg_text += '📊 *Statistics:*\n';
-        msg_text += `• Total: ${stats.totalCount || 0} numbers\n`;
+        const totalCountAll = allNumbers.length > 0 ? allNumbers.length : (stats.totalCount || 0);
+        msg_text += `• Total: ${totalCountAll} numbers\n`;
         msg_text += `• Weight: ${stats.totalWeight || 0}x\n`;
 
         if (stats.probability?.probability) {
