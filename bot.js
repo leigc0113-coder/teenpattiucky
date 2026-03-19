@@ -1775,22 +1775,13 @@ bot.onText(/\/myaccount|My Account/, async (msg) => {
         console.log(`[ACCOUNT] Debug: user.id = ${user?.id}, type = ${typeof user?.id}`);
         console.log(`[ACCOUNT] Debug: user.telegramId = ${user?.telegramId}`);
         
-        // 获取该 Telegram ID 下的所有用户记录（处理多个 gameId 的情况）
+        // 获取该 Telegram ID 下的所有用户记录
         const allUsers = await Database.findAll('users', { telegramId: userId });
         console.log(`[ACCOUNT] Found ${allUsers.length} user record(s) for telegramId ${userId}`);
         
-        // 汇总所有用户记录的充值金额
-        let totalRechargeAll = 0;
-        let allNumbers = [];
-        for (const u of allUsers) {
-            const uTier = await TierService.getTierIdentity(u.id);
-            if (uTier) {
-                totalRechargeAll += (uTier.totalRecharge || 0);
-            }
-            const uStats = await LotteryService.getUserNumberStats(u.id, today);
-            if (uStats.numbers) {
-                allNumbers = allNumbers.concat(uStats.numbers);
-            }
+        // 如果有多于一个账号，显示警告
+        if (allUsers.length > 1) {
+            console.warn(`[ACCOUNT] WARNING: User ${userId} has ${allUsers.length} accounts!`);
         }
 
         const tier = await TierService.getTierIdentity(user.id);
@@ -1818,29 +1809,22 @@ bot.onText(/\/myaccount|My Account/, async (msg) => {
         let msg_text = '👤 *My Account*\n';
         msg_text += '━━━━━━━━━━━━━━━━\n\n';
 
-        // 显示所有关联的游戏ID
-        if (allUsers.length > 0) {
-            msg_text += `🎮 *Game ID${allUsers.length > 1 ? 's' : ''}:*\n`;
-            allUsers.forEach((u, idx) => {
-                msg_text += `  ${idx + 1}. ${u.gameId}${u.id === user.id ? ' ✓' : ''}\n`;
-            });
-            msg_text += '\n';
+        // 显示游戏ID
+        msg_text += `🎮 *Game ID:* ${user.gameId}\n\n`;
+
+        // 如果有多个账号，显示警告
+        if (allUsers.length > 1) {
+            msg_text += `⚠️ *Warning: You have ${allUsers.length} accounts!*\n`;
+            msg_text += `Please contact admin to merge accounts.\n\n`;
         }
 
         if (tier) {
             msg_text += `🏆 *Tier: ${tier.displayName}*\n`;
-            
-            // 显示汇总后的总充值金额
-            const displayRecharge = totalRechargeAll > 0 ? totalRechargeAll : (tier.totalRecharge || 0);
-            msg_text += `💰 Total Recharge: ₹${displayRecharge.toLocaleString()}`;
-            if (allUsers.length > 1 && totalRechargeAll > 0) {
-                msg_text += ` (combined ${allUsers.length} accounts)`;
-            }
-            msg_text += '\n';
+            msg_text += `💰 Total Recharge: ₹${(tier.totalRecharge || 0).toLocaleString()}\n`;
 
             if (tier.level < 10) {
                 const nextThreshold = CONFIG.TIER_THRESHOLDS[tier.level + 1];
-                const remaining = nextThreshold - displayRecharge;
+                const remaining = nextThreshold - (tier.totalRecharge || 0);
                 msg_text += `📈 Next level: ₹${Math.max(0, remaining).toLocaleString()}\n`;
             } else {
                 msg_text += `🌟 Max Level!\n`;
@@ -1857,11 +1841,10 @@ bot.onText(/\/myaccount|My Account/, async (msg) => {
 
         msg_text += '\n';
 
-        // 汇总所有号码
-        if (allNumbers.length > 0 || stats.totalCount > 0) {
+        // 显示当前账号的号码
+        if (stats.totalCount > 0) {
             msg_text += '🎫 *My Numbers:*\n';
-            const displayNumbers = allNumbers.length > 0 ? allNumbers : stats.numbers;
-            msg_text += NumberTierService.formatNumbersDisplay(displayNumbers, true);
+            msg_text += NumberTierService.formatNumbersDisplay(stats.numbers, true);
             msg_text += '\n\n';
         } else {
             msg_text += '🎫 *No numbers yet*\n';
@@ -1869,8 +1852,7 @@ bot.onText(/\/myaccount|My Account/, async (msg) => {
         }
 
         msg_text += '📊 *Statistics:*\n';
-        const totalCountAll = allNumbers.length > 0 ? allNumbers.length : (stats.totalCount || 0);
-        msg_text += `• Total: ${totalCountAll} numbers\n`;
+        msg_text += `• Total: ${stats.totalCount || 0} numbers\n`;
         msg_text += `• Weight: ${stats.totalWeight || 0}x\n`;
 
         if (stats.probability?.probability) {
