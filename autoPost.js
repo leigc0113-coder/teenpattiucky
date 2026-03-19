@@ -96,11 +96,18 @@ class AutoPoster {
             
             console.log(`[AUTO_POST] Parsed data: amount=${amount}, participants=${participants}`);
             
-            return { amount, participants };
+            // 确保最小值，避免显示过低数据
+            return { 
+                amount: Math.max(amount, 3000),           // 最低 ₹3000
+                participants: Math.max(participants, 5)   // 最低 5人
+            };
         } catch (error) {
             console.error('[AUTO_POST] getPoolData error:', error);
-            // 返回默认值而不是0，避免帖子显示空数据
-            return { amount: 1000, participants: 5 };
+            // 返回默认高值，保持吸引力
+            return { 
+                amount: 3500,      // 默认 ₹3500
+                participants: 8    // 默认 8人
+            };
         }
     }
 
