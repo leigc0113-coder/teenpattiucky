@@ -99,8 +99,19 @@ const userState = new Map();
 const pendingScreenshots = new Map();
 
 // ==================== 启动函数 ====================
+// 防止重复启动
+let botInstance = null;
+
 function startBot() {
+    if (botInstance) {
+        console.log('⚠️  Bot already running, skipping duplicate start');
+        return;
+    }
+    
     const bot = new TelegramBot(CONFIG.BOT_TOKEN, { polling: true });
+    botInstance = bot;
+    
+    console.log('🤖 Bot started successfully');
 
     // 调试：打印配置值
     console.log('🔧 CONFIG DEBUG:');

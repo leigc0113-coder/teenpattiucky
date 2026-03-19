@@ -22,7 +22,8 @@ class OpenRouterContentGenerator {
         this.gameLink = config.GAME_LINK || 'https://t.me/yourbot';
         
         if (!this.apiKey) {
-            console.warn('[OpenRouterGenerator] WARNING: OPENROUTER_API_KEY not configured');
+            // 静默跳过，用户可能使用其他 AI 提供商
+            return;
         }
     }
 
