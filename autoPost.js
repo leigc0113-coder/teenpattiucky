@@ -33,6 +33,7 @@ class AutoPoster {
             CHANNEL_ID: this.channelId,
             GROUP_ID: this.groupId,
             GAME_LINK: CONFIG.GAME_LINK || 'https://t.me/yourbot',
+            BOT_USERNAME: CONFIG.CHANNEL_USERNAME?.replace('@', '') || 'TeenPattiLuckyBot',
             KIMI_API_KEY: CONFIG.KIMI_API_KEY,
             KIMI_API_URL: CONFIG.KIMI_API_URL,
             KIMI_MODEL: CONFIG.KIMI_MODEL
@@ -270,51 +271,41 @@ class AutoPoster {
         console.log('[AUTO_POST] Group:', this.groupId);
         console.log('[AUTO_POST] AI Mode:', this.aiGenerator.isAvailable() ? 'Kimi API' : 'Template Fallback');
 
-        // === 频道帖子（广告风格）===
+        // === 频道帖子（游戏推广为主）===
         
-        // 09:00 - 频道早安
+        // 09:00 - 频道早安 + 游戏介绍
         cron.schedule('0 9 * * *', () => {
-            this.postChannelMorning();
+            this.postChannelContent('intro', 'channel');
         }, { timezone: 'Asia/Kolkata' });
 
-        // 11:00 - 频道游戏1
+        // 11:00 - 频道游戏推荐1
         cron.schedule('0 11 * * *', () => {
-            this.postChannelGame('aviator');
+            this.postChannelContent('game_aviator', 'channel');
         }, { timezone: 'Asia/Kolkata' });
 
-        // 13:00 - 频道技巧
+        // 13:00 - 频道游戏技巧
         cron.schedule('0 13 * * *', () => {
-            this.postChannelTips();
+            this.postChannelContent('tips', 'channel');
         }, { timezone: 'Asia/Kolkata' });
 
-        // 15:00 - 频道奖池
+        // 15:00 - 频道游戏推荐2
         cron.schedule('0 15 * * *', () => {
-            this.postChannelPool();
+            this.postChannelContent('game_slots', 'channel');
         }, { timezone: 'Asia/Kolkata' });
 
-        // 17:00 - 频道游戏2
+        // 17:00 - 频道奖池更新
         cron.schedule('0 17 * * *', () => {
-            this.postChannelGame('slots');
-        }, { timezone: 'Asia/Kolkata' });
-
-        // 18:00 - 频道奖池
-        cron.schedule('0 18 * * *', () => {
             this.postChannelPool();
         }, { timezone: 'Asia/Kolkata' });
 
-        // 19:00 - 频道倒计时3h
-        cron.schedule('0 19 * * *', () => {
-            this.postChannelCountdown(180);
-        }, { timezone: 'Asia/Kolkata' });
-
-        // 20:00 - 频道倒计时1h
+        // 20:00 - 频道倒计时1h（提醒关注机器人）
         cron.schedule('0 20 * * *', () => {
-            this.postChannelCountdown(60);
+            this.postChannelCountdownWithBot(60);
         }, { timezone: 'Asia/Kolkata' });
 
-        // 20:30 - 频道倒计时30m
+        // 20:30 - 频道倒计时30m（提醒关注机器人）
         cron.schedule('30 20 * * *', () => {
-            this.postChannelCountdown(30);
+            this.postChannelCountdownWithBot(30);
         }, { timezone: 'Asia/Kolkata' });
 
         // 21:05 - 频道开奖结果
@@ -322,71 +313,98 @@ class AutoPoster {
             this.postChannelWinners();
         }, { timezone: 'Asia/Kolkata' });
 
-        // 23:00 - 频道睡前
+        // 23:00 - 频道晚安 + 明日预告
         cron.schedule('0 23 * * *', () => {
-            this.postChannelNight();
+            this.postChannelContent('preview', 'channel');
         }, { timezone: 'Asia/Kolkata' });
 
-        // === 群组帖子（社群风格）===
+        // === 群组帖子（互动讨论为主，与频道完全不同）===
 
-        // 09:05 - 群组早安（稍晚于频道）
-        cron.schedule('5 9 * * *', () => {
-            this.postGroupMorning();
+        // 09:30 - 群组早安互动
+        cron.schedule('30 9 * * *', () => {
+            this.postGroupContent('morning_chat', 'group');
         }, { timezone: 'Asia/Kolkata' });
 
-        // 11:05 - 群组游戏1
-        cron.schedule('5 11 * * *', () => {
-            this.postGroupGame('aviator');
+        // 11:30 - 群组讨论话题
+        cron.schedule('30 11 * * *', () => {
+            this.postGroupContent('discussion', 'group');
         }, { timezone: 'Asia/Kolkata' });
 
-        // 13:05 - 群组技巧
-        cron.schedule('5 13 * * *', () => {
-            this.postGroupTips();
+        // 14:00 - 群组经验分享
+        cron.schedule('0 14 * * *', () => {
+            this.postGroupContent('experience', 'group');
         }, { timezone: 'Asia/Kolkata' });
 
-        // 15:05 - 群组奖池
-        cron.schedule('5 15 * * *', () => {
+        // 16:00 - 群组问答互动
+        cron.schedule('0 16 * * *', () => {
+            this.postGroupContent('qa', 'group');
+        }, { timezone: 'Asia/Kolkata' });
+
+        // 18:00 - 群组奖池讨论
+        cron.schedule('0 18 * * *', () => {
             this.postGroupPool();
         }, { timezone: 'Asia/Kolkata' });
 
-        // 17:05 - 群组游戏2
-        cron.schedule('5 17 * * *', () => {
-            this.postGroupGame('slots');
-        }, { timezone: 'Asia/Kolkata' });
-
-        // 18:05 - 群组奖池
-        cron.schedule('5 18 * * *', () => {
-            this.postGroupPool();
-        }, { timezone: 'Asia/Kolkata' });
-
-        // 19:05 - 群组倒计时
-        cron.schedule('5 19 * * *', () => {
-            this.postGroupCountdown(180);
-        }, { timezone: 'Asia/Kolkata' });
-
-        // 20:05 - 群组倒计时
-        cron.schedule('5 20 * * *', () => {
+        // 20:10 - 群组倒计时1h（互动式）
+        cron.schedule('10 20 * * *', () => {
             this.postGroupCountdown(60);
         }, { timezone: 'Asia/Kolkata' });
 
-        // 20:35 - 群组倒计时
-        cron.schedule('35 20 * * *', () => {
+        // 20:40 - 群组倒计时30m（互动式）
+        cron.schedule('40 20 * * *', () => {
             this.postGroupCountdown(30);
         }, { timezone: 'Asia/Kolkata' });
 
-        // 21:10 - 群组开奖结果
+        // 21:10 - 群组开奖庆祝
         cron.schedule('10 21 * * *', () => {
             this.postGroupWinners();
         }, { timezone: 'Asia/Kolkata' });
 
-        // 23:05 - 群组睡前
-        cron.schedule('5 23 * * *', () => {
-            this.postGroupNight();
+        // 22:30 - 群组晚安聊天
+        cron.schedule('30 22 * * *', () => {
+            this.postGroupContent('night_chat', 'group');
         }, { timezone: 'Asia/Kolkata' });
 
         console.log('[AUTO_POST] All schedules started!');
-        console.log(`[AUTO_POST] Channel posts: 11 (${this.aiGenerator.isAvailable() ? 'AI' : 'Template'} ad style)`);
-        console.log(`[AUTO_POST] Group posts: 11 (${this.aiGenerator.isAvailable() ? 'AI' : 'Template'} community style)`);
+        console.log(`[AUTO_POST] Channel posts: 9 (Game promotion focus)`);
+        console.log(`[AUTO_POST] Group posts: 9 (Community interaction focus)`);
+    }
+
+    // ============ 频道新帖子类型（游戏推广为主）============
+    
+    // 通用内容发布（支持自定义类型）
+    async postChannelContent(type, target) {
+        const typeKey = `ch_${type}`;
+        if (this.hasPostedToday(typeKey)) return;
+        
+        const poolData = await this.getPoolData();
+        const content = await this.generateContent(type, target, { poolData });
+        await this.sendToChannel(content);
+        this.markPosted(typeKey);
+    }
+
+    // 倒计时（提醒关注机器人）
+    async postChannelCountdownWithBot(minutes) {
+        const typeKey = `ch_cd_bot_${minutes}`;
+        if (this.hasPostedToday(typeKey)) return;
+        
+        const poolData = await this.getPoolData();
+        const content = await this.generateContent('countdown_bot', 'channel', { minutes, poolData });
+        await this.sendToChannel(content);
+        this.markPosted(typeKey);
+    }
+
+    // ============ 群组新帖子类型（互动讨论为主）============
+
+    // 通用群组内容
+    async postGroupContent(type, target) {
+        const typeKey = `gr_${type}`;
+        if (this.hasPostedToday(typeKey)) return;
+        
+        const poolData = await this.getPoolData();
+        const content = await this.generateContent(type, target, { poolData });
+        await this.sendToGroup(content);
+        this.markPosted(typeKey);
     }
 
     // ============ 手动测试 ============

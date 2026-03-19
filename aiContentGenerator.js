@@ -24,8 +24,14 @@ class AIContentGenerator {
             BOT_NAME: config.BOT_NAME || 'TeenPatti Lucky Bot',
             APP_NAME: config.APP_NAME || 'TeenPatti Master',
             GAME_LINK: config.GAME_LINK || 'https://t.me/yourbot',
+            BOT_USERNAME: config.BOT_USERNAME || 'TeenPattiLuckyBot',
             ...config
         };
+        
+        this.botName = this.config.BOT_NAME;
+        this.appName = this.config.APP_NAME;
+        this.gameLink = this.config.GAME_LINK;
+        this.botUsername = this.config.BOT_USERNAME;
         
         // 初始化 Kimi
         this.kimiApiKey = config.KIMI_API_KEY || process.env.KIMI_API_KEY;
@@ -79,7 +85,10 @@ class AIContentGenerator {
         const style = target === 'group' ? 'community' : 'advertising';
         const isChannel = target === 'channel';
         
-        const baseContext = this.getBaseContext(data);
+        // 将 type 和 target 传入 data 以便 getBaseContext 使用
+        const enhancedData = { ...data, type, target };
+        
+        const baseContext = this.getBaseContext(enhancedData);
         const typeInstructions = this.getTypeInstructions(type, isChannel);
         const styleGuide = this.getStyleGuide(isChannel);
         
@@ -112,43 +121,60 @@ ${typeInstructions}
 - 参与人数: ${participants}
 - 开奖时间: 21:00 IST (印度时间)
 - 游戏链接: ${this.gameLink}
+- 机器人链接: https://t.me/${this.botUsername}
 - 游戏类型: ${gameType}
-- 倒计时: ${minutes} 分钟`;
+- 倒计时: ${minutes} 分钟
+
+重要要求：
+${data.target === 'channel' ? '- 必须包含游戏下载链接' : '- 不要发链接，纯聊天'}
+${data.type === 'countdown_bot' ? '- 必须提醒用户关注机器人获取号码' : ''}`;
     }
 
     // 帖子类型指令
     getTypeInstructions(type, isChannel) {
-        const instructions = {
-            morning: isChannel 
-                ? '类型: 早安帖。目的: 开启新的一天，吸引用户参与今日抽奖。语气: 充满活力、激励人心。'
-                : '类型: 早安帖。目的: 自然地开始对话，询问大家今天怎么样。语气: 像朋友一样聊天。',
+        // 频道内容：游戏推广为主
+        const channelInstructions = {
+            intro: '类型: 平台介绍。目的: 介绍Teen Patti游戏平台，吸引新用户。强调: 游戏乐趣、赢钱机会、免费参与。必须包含游戏下载链接。',
             
-            pool: isChannel
-                ? '类型: 奖池更新。目的: 展示奖池增长，刺激用户参与。强调: 参与人数越多，奖池越大。'
-                : '类型: 奖池更新。目的: 分享奖池数据，引发讨论。语气: 轻松、带点兴奋。',
+            game_aviator: '类型: Aviator游戏推广。目的: 推广Aviator游戏。强调: 游戏特点、刺激玩法、高赔率、立即试玩。必须包含游戏下载链接。',
             
-            countdown: isChannel
-                ? '类型: 开奖倒计时。目的: 制造紧迫感，最后冲刺。强调: 时间紧迫，立即行动。'
-                : '类型: 开奖倒计时。目的: 提醒大家时间快到了，互动式。语气: 期待、紧张。',
+            game_slots: '类型: Slots游戏推广。目的: 推广Slots游戏。强调: 丰富主题、大奖机会、简单好玩。必须包含游戏下载链接。',
             
-            winners: isChannel
-                ? '类型: 开奖结果。目的: 宣布中奖者，同时预告明天。强调: 真实中奖，鼓励继续参与。'
-                : '类型: 开奖结果。目的: 祝贺中奖者，安慰其他人。语气: 祝贺、鼓励。',
+            tips: '类型: 赢钱技巧。目的: 提供游戏技巧，建立信任。强调: 实用技巧能帮助赢钱。可以提及游戏平台。',
             
-            night: isChannel
-                ? '类型: 晚安帖。目的: 结束一天，预告明天。强调: 明天继续，保持期待。'
-                : '类型: 晚安帖。目的: 自然地结束对话。语气: 轻松、友好道别。',
+            pool: '类型: 奖池更新。目的: 展示奖池金额，刺激参与。强调: 参与人数越多奖池越大，现在加入来得及。',
             
-            game: isChannel
-                ? '类型: 游戏推荐。目的: 推荐游戏，引导试玩。强调: 游戏特点、赢钱机会。'
-                : '类型: 游戏推荐。目的: 分享游戏体验，征求意见。语气: 真实、分享式。',
+            countdown_bot: '类型: 开奖倒计时+关注提醒。目的: 制造紧迫感+引导关注机器人。强调: 时间紧迫，立即关注机器人获取号码。必须包含机器人链接和关注引导。',
             
-            tips: isChannel
-                ? '类型: 技巧分享。目的: 提供价值，建立信任。强调: 实用技巧，帮助赢钱。'
-                : '类型: 技巧分享。目的: 分享小窍门，引发讨论。语气: 友好建议。'
+            winners: '类型: 开奖结果。目的: 宣布中奖者，展示真实性。强调: 真实中奖、立即到账，鼓励明天继续参与。',
+            
+            preview: '类型: 明日预告。目的: 预告明天活动，保持期待。强调: 明天奖池更大、机会更多。'
         };
-        
-        return instructions[type] || instructions.morning;
+
+        // 群组内容：互动讨论为主，与频道完全不同
+        const groupInstructions = {
+            morning_chat: '类型: 早安闲聊。目的: 自然开启对话，不问游戏。话题: 今天计划、心情、天气。像朋友聊天，不要推销。',
+            
+            discussion: '类型: 话题讨论。目的: 引发群内讨论。话题: "你们最喜欢什么游戏？"、"赢过最大的奖是多少？"。纯互动，不要发链接。',
+            
+            experience: '类型: 经验分享。目的: 分享游戏经验，听取大家意见。语气: "我最近发现..."、"你们觉得怎么样？"。不要直接推销。',
+            
+            qa: '类型: 问答互动。目的: 提问让大家回答。问题: "有人中过奖吗？"、"新手建议玩什么？"。鼓励回复。',
+            
+            pool: '类型: 奖池讨论。目的: 分享奖池信息，引发讨论。语气: "哇今天奖池已经XXX了"、"你们猜今天多少人参与？"。',
+            
+            countdown: '类型: 倒计时互动。目的: 提醒开奖时间，互动式。语气: "还有X小时开奖，紧张！"、"你们都准备好了吗？"。',
+            
+            winners: '类型: 开奖庆祝。目的: 祝贺中奖者，安慰其他人。语气: 恭喜、鼓励、明天继续。',
+            
+            night_chat: '类型: 晚安闲聊。目的: 自然结束对话。话题: 明天见、好梦、感谢今天参与。像朋友道别。'
+        };
+
+        if (isChannel) {
+            return channelInstructions[type] || channelInstructions.intro;
+        } else {
+            return groupInstructions[type] || groupInstructions.morning_chat;
+        }
     }
 
     // 风格指南
