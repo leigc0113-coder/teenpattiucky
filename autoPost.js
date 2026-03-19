@@ -278,9 +278,19 @@ class AutoPoster {
             this.postChannelContent('intro', 'channel');
         }, { timezone: 'Asia/Kolkata' });
 
+        // 10:00 - 频道游戏推广（新增）
+        cron.schedule('0 10 * * *', () => {
+            this.postChannelContent('game_aviator', 'channel');
+        }, { timezone: 'Asia/Kolkata' });
+
         // 11:00 - 频道游戏推荐1
         cron.schedule('0 11 * * *', () => {
             this.postChannelContent('game_aviator', 'channel');
+        }, { timezone: 'Asia/Kolkata' });
+
+        // 12:00 - 频道技巧分享（新增）
+        cron.schedule('0 12 * * *', () => {
+            this.postChannelContent('tips', 'channel');
         }, { timezone: 'Asia/Kolkata' });
 
         // 13:00 - 频道游戏技巧
@@ -308,6 +318,11 @@ class AutoPoster {
             this.postChannelCountdownWithBot(30);
         }, { timezone: 'Asia/Kolkata' });
 
+        // 21:00 - 频道开奖直播（新增）
+        cron.schedule('0 21 * * *', () => {
+            this.postChannelContent('live_draw', 'channel');
+        }, { timezone: 'Asia/Kolkata' });
+
         // 21:05 - 频道开奖结果
         cron.schedule('5 21 * * *', () => {
             this.postChannelWinners();
@@ -325,9 +340,19 @@ class AutoPoster {
             this.postGroupContent('morning_chat', 'group');
         }, { timezone: 'Asia/Kolkata' });
 
+        // 10:30 - 群组闲聊（新增）
+        cron.schedule('30 10 * * *', () => {
+            this.postGroupContent('discussion', 'group');
+        }, { timezone: 'Asia/Kolkata' });
+
         // 11:30 - 群组讨论话题
         cron.schedule('30 11 * * *', () => {
             this.postGroupContent('discussion', 'group');
+        }, { timezone: 'Asia/Kolkata' });
+
+        // 12:30 - 群组午间聊天（新增）
+        cron.schedule('30 12 * * *', () => {
+            this.postGroupContent('experience', 'group');
         }, { timezone: 'Asia/Kolkata' });
 
         // 14:00 - 群组经验分享
@@ -355,6 +380,11 @@ class AutoPoster {
             this.postGroupCountdown(30);
         }, { timezone: 'Asia/Kolkata' });
 
+        // 21:00 - 群组开奖直播（新增）
+        cron.schedule('0 21 * * *', () => {
+            this.postGroupContent('live_draw', 'group');
+        }, { timezone: 'Asia/Kolkata' });
+
         // 21:10 - 群组开奖庆祝
         cron.schedule('10 21 * * *', () => {
             this.postGroupWinners();
@@ -366,8 +396,8 @@ class AutoPoster {
         }, { timezone: 'Asia/Kolkata' });
 
         console.log('[AUTO_POST] All schedules started!');
-        console.log(`[AUTO_POST] Channel posts: 9 (Game promotion focus)`);
-        console.log(`[AUTO_POST] Group posts: 9 (Community interaction focus)`);
+        console.log(`[AUTO_POST] Channel posts: 11 (Game promotion focus)`);
+        console.log(`[AUTO_POST] Group posts: 11 (Community interaction focus)`);
     }
 
     // ============ 频道新帖子类型（游戏推广为主）============
