@@ -21,25 +21,25 @@ module.exports = {
     
     /**
      * 官方频道ID（数字格式）
-     * 使用环境变量或默认值
+     * 格式: -100xxxxxxxxxx
      */
-    CHANNEL_ID: process.env.CHANNEL_ID || '-1003881508220',
+    CHANNEL_ID: process.env.CHANNEL_ID || '-1002683944820',
     
     /**
      * 官方频道用户名
+     * 格式: @channelname
      */
-    CHANNEL_USERNAME: process.env.CHANNEL_USERNAME || '@telltest222',
+    CHANNEL_USERNAME: process.env.CHANNEL_USERNAME || '@TeenpattiMastetClub',
     
     /**
      * 玩家群组ID（数字格式，用于API调用）
      */
-    GROUP_ID: process.env.GROUP_ID || '-1003858436956',
+    GROUP_ID: process.env.GROUP_ID || '-1002584745356',
     
     /**
      * 玩家群组用户名（@格式，用于显示和跳转）
-     * 从环境变量读取，方便随时更换
      */
-    GROUP_USERNAME: process.env.GROUP_USERNAME || '@tkgfg',
+    GROUP_USERNAME: process.env.GROUP_USERNAME || '@WinBigInstaOfficial',
     
     /**
      * 是否强制要求关注频道
