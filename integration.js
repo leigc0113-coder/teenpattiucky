@@ -510,6 +510,82 @@ class ChannelGroupBotIntegration {
     }
 
     /**
+     * 记录每日频道/群组人数快照
+     */
+    async recordDailyStats() {
+        try {
+            const today = new Date().toISOString().split('T')[0];
+            
+            // 获取当前人数
+            const channelCount = await this.getChannelStats();
+            const groupCount = await this.getGroupStats();
+            
+            // 保存到数据库
+            await Database.upsert('dailyStats', 
+                { date: today, type: 'channel' },
+                { 
+                    date: today,
+                    type: 'channel',
+                    count: channelCount.memberCount || 0,
+                    updatedAt: new Date().toISOString()
+                }
+            );
+            
+            await Database.upsert('dailyStats',
+                { date: today, type: 'group' },
+                {
+                    date: today,
+                    type: 'group',
+                    count: groupCount.memberCount || 0,
+                    updatedAt: new Date().toISOString()
+                }
+            );
+            
+            console.log(`[DAILY_STATS] Recorded: Channel=${channelCount.memberCount}, Group=${groupCount.memberCount}`);
+        } catch (error) {
+            console.error('[DAILY_STATS] Error:', error.message);
+        }
+    }
+
+    /**
+     * 获取今日新增人数
+     */
+    async getTodayNewMembers() {
+        try {
+            const today = new Date().toISOString().split('T')[0];
+            const yesterday = new Date();
+            yesterday.setDate(yesterday.getDate() - 1);
+            const yesterdayStr = yesterday.toISOString().split('T')[0];
+            
+            // 获取今日数据
+            const todayChannel = await Database.findOne('dailyStats', { date: today, type: 'channel' });
+            const todayGroup = await Database.findOne('dailyStats', { date: today, type: 'group' });
+            
+            // 获取昨日数据
+            const yesterdayChannel = await Database.findOne('dailyStats', { date: yesterdayStr, type: 'channel' });
+            const yesterdayGroup = await Database.findOne('dailyStats', { date: yesterdayStr, type: 'group' });
+            
+            // 计算新增（如果没有昨日数据，则返回0）
+            const channelNew = todayChannel && yesterdayChannel 
+                ? (todayChannel.count - yesterdayChannel.count) 
+                : 0;
+            const groupNew = todayGroup && yesterdayGroup 
+                ? (todayGroup.count - yesterdayGroup.count) 
+                : 0;
+            
+            return {
+                channelNew: Math.max(0, channelNew),
+                groupNew: Math.max(0, groupNew),
+                channelTotal: todayChannel?.count || 0,
+                groupTotal: todayGroup?.count || 0
+            };
+        } catch (error) {
+            console.error('[TODAY_NEW] Error:', error.message);
+            return { channelNew: 0, groupNew: 0, channelTotal: 0, groupTotal: 0 };
+        }
+    }
+
+    /**
      * 跨平台通知（重要事件）
      */
     async broadcastImportant(message) {

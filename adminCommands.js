@@ -436,7 +436,7 @@ class AdminCommands {
         });
     }
 
-    // ==================== 今日统计（包含频道/群组数据）====================
+    // ==================== 今日统计（包含频道/群组数据 + 今日新增）====================
     async showStats(chatId) {
         // 使用 IST 时间
         const today = TimeUtil.getTodayIST();
@@ -450,26 +450,27 @@ class AdminCommands {
         const todayRecharges = recharges.filter(r => r.createdAt.startsWith(today));
         const todayAmount = todayRecharges.reduce((sum, r) => sum + (parseInt(r.amount) || 0), 0);
         
-        // 获取频道和群组人数
+        // 获取频道和群组人数（包含今日新增）
         let channelCount = 0;
         let groupCount = 0;
+        let channelNew = 0;
+        let groupNew = 0;
         
         try {
             const Integration = require('./integration');
             const integration = new Integration(this.bot);
-            const channelStats = await integration.getChannelStats();
-            channelCount = channelStats?.memberCount || 0;
+            
+            // 先记录今日数据
+            await integration.recordDailyStats();
+            
+            // 获取今日新增
+            const newMembers = await integration.getTodayNewMembers();
+            channelCount = newMembers.channelTotal;
+            groupCount = newMembers.groupTotal;
+            channelNew = newMembers.channelNew;
+            groupNew = newMembers.groupNew;
         } catch (e) {
-            console.log('[STATS] Channel stats error:', e.message);
-        }
-        
-        try {
-            const Integration = require('./integration');
-            const integration = new Integration(this.bot);
-            const groupStats = await integration.getGroupStats();
-            groupCount = groupStats?.memberCount || 0;
-        } catch (e) {
-            console.log('[STATS] Group stats error:', e.message);
+            console.log('[STATS] Channel/Group stats error:', e.message);
         }
         
         const text = 
@@ -481,8 +482,8 @@ class AdminCommands {
             `📊 今日批准: ${todayRecharges.length}\n` +
             `💎 奖池金额: ₹${(pool?.finalAmount || 0).toLocaleString()}\n\n` +
             '*📢 社群数据*\n' +
-            `📣 频道人数: ${channelCount.toLocaleString()}\n` +
-            `💬 群组人数: ${groupCount.toLocaleString()}\n\n` +
+            `📣 频道人数: ${channelCount.toLocaleString()}(+${channelNew}今日新增)\n` +
+            `💬 群组人数: ${groupCount.toLocaleString()}(+${groupNew}今日新增)\n\n` +
             `⏰ 开奖时间: 21:00 IST`;
 
         await this.bot.sendMessage(chatId, text, {
