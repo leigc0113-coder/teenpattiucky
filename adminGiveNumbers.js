@@ -15,6 +15,7 @@
 const Database = require('./database');
 const LotteryService = require('./lotteryService');
 const NumberTierService = require('./numberTierService');
+const TimeUtil = require('./timeUtil');
 
 class AdminGiveNumbers {
     constructor(bot, config) {

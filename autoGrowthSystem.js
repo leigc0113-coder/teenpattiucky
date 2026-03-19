@@ -13,6 +13,7 @@
 const cron = require('node-cron');
 const fs = require('fs').promises;
 const path = require('path');
+const TimeUtil = require('./timeUtil');
 
 class AutoGrowthSystem {
     constructor(bot) {
@@ -183,7 +184,7 @@ class AutoGrowthSystem {
     async taskDailyReport() {
         console.log('[GROWTH][20:00] Generating daily report...');
         
-        const today = new Date().toDateString();
+        const today = TimeUtil.getTodayIST();  // 使用 IST
         const logs = await this.loadLogs();
         const todayLogs = logs.filter(l => l.date === today);
         
@@ -316,7 +317,7 @@ Anyone else tried this? What's your experience with Telegram money-making bots?`
     async logAction(type, data) {
         const log = {
             type,
-            date: new Date().toDateString(),
+            date: TimeUtil.getTodayIST(),  // 使用 IST 日期
             time: new Date().toISOString(),
             ...data
         };

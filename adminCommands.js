@@ -18,6 +18,7 @@ const TierService = require('./tierService');
 const VIPService = require('./vipService');
 const PoolService = require('./poolService');
 const DrawService = require('./drawService');
+const TimeUtil = require('./timeUtil');
 
 class AdminCommands {
     constructor(bot, config) {
@@ -437,16 +438,17 @@ class AdminCommands {
 
     // ==================== 今日统计（包含频道/群组数据）====================
     async showStats(chatId) {
-        const today = new Date().toISOString().split('T')[0];
+        // 使用 IST 时间
+        const today = TimeUtil.getTodayIST();
         
         // 获取数据
         const users = await Database.getAll('users');
         const recharges = await Database.findAll('recharges', { status: 'APPROVED' });
         const pool = await PoolService.getTodayPool();
         
-        // 今日数据
+        // 今日数据（使用 IST 日期匹配）
         const todayRecharges = recharges.filter(r => r.createdAt.startsWith(today));
-        const todayAmount = todayRecharges.reduce((sum, r) => sum + r.amount, 0);
+        const todayAmount = todayRecharges.reduce((sum, r) => sum + (parseInt(r.amount) || 0), 0);
         
         // 获取频道和群组人数
         let channelCount = 0;

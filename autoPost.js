@@ -19,6 +19,7 @@ const PoolService = require('./poolService');
 const Database = require('./database');
 const CONFIG = require('./config');
 const cron = require('node-cron');
+const TimeUtil = require('./timeUtil');
 
 class AutoPoster {
     constructor(bot) {
@@ -85,7 +86,7 @@ class AutoPoster {
                 console.log('[AUTO_POST] No pool data for today, trying yesterday...');
                 const yesterday = new Date();
                 yesterday.setDate(yesterday.getDate() - 1);
-                const yesterdayStr = yesterday.toISOString().split('T')[0];
+                const yesterdayStr = TimeUtil.toISTDateString(yesterday);
                 pool = await PoolService.findOne('pools', { date: yesterdayStr });
             }
             
@@ -138,12 +139,12 @@ class AutoPoster {
     }
 
     hasPostedToday(type) {
-        const key = `${new Date().toDateString()}_${type}`;
+        const key = `${TimeUtil.getTodayIST()}_${type}`;
         return this.postLog.has(key);
     }
 
     markPosted(type) {
-        const key = `${new Date().toDateString()}_${type}`;
+        const key = `${TimeUtil.getTodayIST()}_${type}`;
         this.postLog.set(key, new Date());
     }
 
