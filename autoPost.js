@@ -1,12 +1,19 @@
 /**
  * ============================================================
- * 自动发帖脚本 v3.0 - 双风格/双目标
+ * 自动发帖脚本 v4.0 - AI 驱动版 (Kimi API 集成)
  * ============================================================
  * 
- * 频道 @telltest222：广告风格（专业、直接推销）
- * 群组 @tkgfg：社群风格（自然、朋友式）
+ * 频道 @telltest222：AI 生成广告风格（专业、直接推销）
+ * 群组 @tkgfg：AI 生成社群风格（自然、朋友式）
+ * 
+ * 功能：
+ * - 接入 Kimi API 智能生成内容
+ * - 双风格输出（频道/群组）
+ * - 实时数据融合（奖池、参与人数）
+ * - 备用模板机制（API 失败时自动降级）
  */
 
+const AIContentGenerator = require('./aiContentGenerator');
 const ContentGeneratorDual = require('./contentGeneratorDual');
 const PoolService = require('./poolService');
 const Database = require('./database');
@@ -24,15 +31,48 @@ class AutoPoster {
             APP_NAME: CONFIG.APP_NAME || 'TeenPatti Master',
             CHANNEL_ID: this.channelId,
             GROUP_ID: this.groupId,
-            GAME_LINK: CONFIG.GAME_LINK || 'https://t.me/yourbot'
+            GAME_LINK: CONFIG.GAME_LINK || 'https://t.me/yourbot',
+            KIMI_API_KEY: CONFIG.KIMI_API_KEY,
+            KIMI_API_URL: CONFIG.KIMI_API_URL,
+            KIMI_MODEL: CONFIG.KIMI_MODEL
         };
         
-        this.generator = new ContentGeneratorDual(this.config);
+        // AI 内容生成器（优先使用）
+        this.aiGenerator = new AIContentGenerator(this.config);
+        // 备用模板生成器
+        this.fallbackGenerator = new ContentGeneratorDual(this.config);
+        
         this.postLog = new Map();
         
         Database.init().catch(err => {
             console.error('[AUTO_POST] Database init error:', err);
         });
+        
+        // 显示 AI 状态
+        if (this.aiGenerator.isAvailable()) {
+            console.log('[AUTO_POST] 🤖 AI Content Generation: ENABLED (Kimi API)');
+        } else {
+            console.log('[AUTO_POST] ⚠️  AI Content Generation: DISABLED - using fallback templates');
+            console.log('[AUTO_POST]     Tip: Set KIMI_API_KEY in .env to enable AI generation');
+        }
+    }
+
+    // 智能生成内容（优先 AI，失败用模板）
+    async generateContent(type, target, data = {}) {
+        try {
+            // 尝试使用 AI 生成
+            if (this.aiGenerator.isAvailable()) {
+                console.log(`[AUTO_POST] Generating AI content for ${type}/${target}...`);
+                const content = await this.aiGenerator.generate(type, target, data);
+                if (content) return content;
+            }
+        } catch (error) {
+            console.error('[AUTO_POST] AI generation failed:', error.message);
+        }
+        
+        // 降级到模板生成
+        console.log(`[AUTO_POST] Using fallback template for ${type}/${target}`);
+        return this.fallbackGenerator.generate(type, target, data);
     }
 
     async getPoolData() {
@@ -89,12 +129,12 @@ class AutoPoster {
         this.postLog.set(key, new Date());
     }
 
-    // ============ 频道帖子（广告风格）============
+    // ============ 频道帖子（AI 广告风格）============
     
     async postChannelMorning() {
         if (this.hasPostedToday('ch_morning')) return;
         const poolData = await this.getPoolData();
-        const content = this.generator.generate('morning', 'channel', poolData);
+        const content = await this.generateContent('morning', 'channel', { poolData });
         await this.sendToChannel(content);
         this.markPosted('ch_morning');
     }
@@ -102,14 +142,14 @@ class AutoPoster {
     async postChannelGame(gameType) {
         const type = `ch_game_${gameType}`;
         if (this.hasPostedToday(type)) return;
-        const content = this.generator.generate('game', 'channel', { gameType });
+        const content = await this.generateContent('game', 'channel', { gameType });
         await this.sendToChannel(content);
         this.markPosted(type);
     }
 
     async postChannelTips() {
         if (this.hasPostedToday('ch_tips')) return;
-        const content = this.generator.generate('tips', 'channel');
+        const content = await this.generateContent('tips', 'channel');
         await this.sendToChannel(content);
         this.markPosted('ch_tips');
     }
@@ -117,7 +157,7 @@ class AutoPoster {
     async postChannelPool() {
         if (this.hasPostedToday('ch_pool')) return;
         const poolData = await this.getPoolData();
-        const content = this.generator.generate('pool', 'channel', poolData);
+        const content = await this.generateContent('pool', 'channel', { poolData });
         await this.sendToChannel(content);
         this.markPosted('ch_pool');
     }
@@ -126,7 +166,7 @@ class AutoPoster {
         const type = `ch_cd_${minutes}`;
         if (this.hasPostedToday(type)) return;
         const poolData = await this.getPoolData();
-        const content = this.generator.generate('countdown', 'channel', { minutes, poolData });
+        const content = await this.generateContent('countdown', 'channel', { minutes, poolData });
         await this.sendToChannel(content);
         this.markPosted(type);
     }
@@ -134,24 +174,24 @@ class AutoPoster {
     async postChannelWinners() {
         if (this.hasPostedToday('ch_winners')) return;
         const poolData = await this.getPoolData();
-        const content = this.generator.generate('winners', 'channel', poolData);
+        const content = await this.generateContent('winners', 'channel', { poolData });
         await this.sendToChannel(content);
         this.markPosted('ch_winners');
     }
 
     async postChannelNight() {
         if (this.hasPostedToday('ch_night')) return;
-        const content = this.generator.generate('night', 'channel');
+        const content = await this.generateContent('night', 'channel');
         await this.sendToChannel(content);
         this.markPosted('ch_night');
     }
 
-    // ============ 群组帖子（社群风格）============
+    // ============ 群组帖子（AI 社群风格）============
 
     async postGroupMorning() {
         if (this.hasPostedToday('gr_morning')) return;
         const poolData = await this.getPoolData();
-        const content = this.generator.generate('morning', 'group', poolData);
+        const content = await this.generateContent('morning', 'group', { poolData });
         await this.sendToGroup(content);
         this.markPosted('gr_morning');
     }
@@ -159,14 +199,14 @@ class AutoPoster {
     async postGroupGame(gameType) {
         const type = `gr_game_${gameType}`;
         if (this.hasPostedToday(type)) return;
-        const content = this.generator.generate('game', 'group', { gameType });
+        const content = await this.generateContent('game', 'group', { gameType });
         await this.sendToGroup(content);
         this.markPosted(type);
     }
 
     async postGroupTips() {
         if (this.hasPostedToday('gr_tips')) return;
-        const content = this.generator.generate('tips', 'group');
+        const content = await this.generateContent('tips', 'group');
         await this.sendToGroup(content);
         this.markPosted('gr_tips');
     }
@@ -174,7 +214,7 @@ class AutoPoster {
     async postGroupPool() {
         if (this.hasPostedToday('gr_pool')) return;
         const poolData = await this.getPoolData();
-        const content = this.generator.generate('pool', 'group', poolData);
+        const content = await this.generateContent('pool', 'group', { poolData });
         await this.sendToGroup(content);
         this.markPosted('gr_pool');
     }
@@ -183,7 +223,7 @@ class AutoPoster {
         const type = `gr_cd_${minutes}`;
         if (this.hasPostedToday(type)) return;
         const poolData = await this.getPoolData();
-        const content = this.generator.generate('countdown', 'group', { minutes, poolData });
+        const content = await this.generateContent('countdown', 'group', { minutes, poolData });
         await this.sendToGroup(content);
         this.markPosted(type);
     }
@@ -191,14 +231,14 @@ class AutoPoster {
     async postGroupWinners() {
         if (this.hasPostedToday('gr_winners')) return;
         const poolData = await this.getPoolData();
-        const content = this.generator.generate('winners', 'group', poolData);
+        const content = await this.generateContent('winners', 'group', { poolData });
         await this.sendToGroup(content);
         this.markPosted('gr_winners');
     }
 
     async postGroupNight() {
         if (this.hasPostedToday('gr_night')) return;
-        const content = this.generator.generate('night', 'group');
+        const content = await this.generateContent('night', 'group');
         await this.sendToGroup(content);
         this.markPosted('gr_night');
     }
@@ -206,9 +246,10 @@ class AutoPoster {
     // ============ 定时任务 ============
 
     startScheduledPosts() {
-        console.log('[AUTO_POST] Starting dual-style posts...');
+        console.log('[AUTO_POST] Starting AI-powered dual-style posts...');
         console.log('[AUTO_POST] Channel:', this.channelId);
         console.log('[AUTO_POST] Group:', this.groupId);
+        console.log('[AUTO_POST] AI Mode:', this.aiGenerator.isAvailable() ? 'Kimi API' : 'Template Fallback');
 
         // === 频道帖子（广告风格）===
         
@@ -325,16 +366,16 @@ class AutoPoster {
         }, { timezone: 'Asia/Kolkata' });
 
         console.log('[AUTO_POST] All schedules started!');
-        console.log('[AUTO_POST] Channel posts: 11 (ad style)');
-        console.log('[AUTO_POST] Group posts: 11 (community style)');
+        console.log(`[AUTO_POST] Channel posts: 11 (${this.aiGenerator.isAvailable() ? 'AI' : 'Template'} ad style)`);
+        console.log(`[AUTO_POST] Group posts: 11 (${this.aiGenerator.isAvailable() ? 'AI' : 'Template'} community style)`);
     }
 
     // ============ 手动测试 ============
 
     async testPost(target, type, data = {}) {
-        console.log(`[TEST] Sending ${type} to ${target}...`);
+        console.log(`[TEST] Generating ${type} for ${target} using ${this.aiGenerator.isAvailable() ? 'AI' : 'Template'}...`);
         
-        const content = this.generator.generate(type, target, data);
+        const content = await this.generateContent(type, target, data);
         
         if (target === 'channel') {
             await this.sendToChannel(content);
@@ -343,6 +384,12 @@ class AutoPoster {
         }
         
         console.log(`[TEST] ${type} sent to ${target}`);
+        console.log('[TEST] Content preview:', content.substring(0, 100) + '...');
+    }
+    
+    // 获取当前生成模式
+    getGenerationMode() {
+        return this.aiGenerator.isAvailable() ? 'AI (Kimi API)' : 'Template Fallback';
     }
 }
 

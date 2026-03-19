@@ -49,6 +49,28 @@ module.exports = {
     // ==================== AI 自动发帖配置 ====================
     
     /**
+     * Kimi API Key (从 https://platform.moonshot.cn/ 或 https://www.kimi.com/code 获取)
+     * 用于 AI 智能生成帖子内容
+     */
+    KIMI_API_KEY: process.env.KIMI_API_KEY || null,
+    
+    /**
+     * Kimi API URL (可选)
+     * 如果使用 Kimi Code 平台或其他自定义端点，可设置此项
+     */
+    KIMI_API_URL: process.env.KIMI_API_URL || null,
+    
+    /**
+     * Kimi 模型选择
+     * moonshot-v1-8k: 标准版，性价比高 (推荐)
+     * moonshot-v1-32k: 长文本版
+     * moonshot-v1-128k: 超长文本版
+     */
+    KIMI_MODEL: process.env.KIMI_MODEL || 'moonshot-v1-8k',
+    
+    // ==================== 游戏链接配置 ====================
+    
+    /**
      * 游戏APP下载链接
      */
     GAME_LINK: process.env.GAME_LINK || 'https://www.teenpatty-master.com/eGBic1p2XEJ7fAA=',
