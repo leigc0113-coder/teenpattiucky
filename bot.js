@@ -2741,6 +2741,54 @@ console.log('   - 14:00: Reddit post generation');
 console.log('   - 16:00: Group sharing round 2');
 console.log('   - 20:00: Daily report');
 
+// ==================== 🧪 AI 测试任务（5分钟后执行）====================
+console.log('[TEST] ⏰ Scheduling AI test in 5 minutes...');
+setTimeout(async () => {
+    console.log('[TEST] 🧪 Running 5-minute delayed AI test...');
+    try {
+        const AIContentGenerator = require('./aiContentGenerator');
+        const ai = new AIContentGenerator({
+            BOT_NAME: CONFIG.BOT_NAME,
+            APP_NAME: CONFIG.APP_NAME,
+            GAME_LINK: CONFIG.GAME_LINK,
+            KIMI_API_KEY: process.env.KIMI_API_KEY,
+            KIMI_API_URL: process.env.KIMI_API_URL,
+            KIMI_MODEL: process.env.KIMI_MODEL
+        });
+        
+        console.log('[TEST] AI Available:', ai.isAvailable());
+        
+        if (ai.isAvailable()) {
+            const content = await ai.generate('morning', 'channel', {
+                poolData: { amount: 5000, participants: 15 }
+            });
+            
+            console.log('[TEST] ✅ AI Content generated!');
+            
+            // 发送到频道
+            if (CONFIG.CHANNEL_ID) {
+                await bot.sendMessage(CONFIG.CHANNEL_ID,
+                    `🧪 *AI Test Post - Moonshot*\n\n${content}\n\n✅ Test completed successfully!`,
+                    { parse_mode: 'Markdown' }
+                );
+                console.log('[TEST] ✅ Test post sent to channel!');
+                console.log('[TEST] 🎉 Moonshot AI is working correctly!');
+            }
+        } else {
+            console.log('[TEST] ❌ AI not available');
+        }
+    } catch (error) {
+        console.error('[TEST] ❌ Test failed:', error.message);
+        // 发送失败通知
+        if (CONFIG.CHANNEL_ID) {
+            await bot.sendMessage(CONFIG.CHANNEL_ID,
+                `🧪 *AI Test Failed*\n❌ Error: ${error.message}\n\nFalling back to template mode.`,
+                { parse_mode: 'Markdown' }
+            );
+        }
+    }
+}, 5 * 60 * 1000); // 5 分钟 = 300 秒
+
 // 导出供其他地方使用
 module.exports.autoPoster = autoPoster;
 module.exports.contentMaster = contentMaster;
