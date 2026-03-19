@@ -198,6 +198,36 @@ ${this.gameLink}
                 tagline: "India's Favorite Card Game!",
                 features: ['1M+ active players', 'Daily tournaments', '₹1 Lakh prize pools'],
                 tip: 'Reading opponents is everything. Watch before you bluff!'
+            },
+            roulette: {
+                name: 'Roulette 🎡',
+                tagline: 'The Classic Wheel of Fortune!',
+                features: ['European & American tables', '35:1 payout on single number', 'Multiple betting options'],
+                tip: 'Stick to outside bets (Red/Black, Odd/Even) for better odds!'
+            },
+            blackjack: {
+                name: 'Blackjack 🃏',
+                tagline: 'Beat the Dealer, Win Big!',
+                features: ['3:2 payout on Blackjack', 'Double down option', 'Split pairs'],
+                tip: 'Always stand on 17+. Hit on 11 or less. Basic strategy wins!'
+            },
+            baccarat: {
+                name: 'Baccarat 💰',
+                tagline: 'High Roller Favorite!',
+                features: ['Low house edge (1.06%)', 'Bet on Player, Banker, or Tie', 'Fast gameplay'],
+                tip: 'Banker bet has lowest house edge. Avoid Tie bets!'
+            },
+            poker: {
+                name: 'Texas Hold\'em 🎰',
+                tagline: 'Skill Meets Luck!',
+                features: ['Daily tournaments', '₹10 Lakh+ prize pools', 'Multi-table options'],
+                tip: 'Position is power. Play tight early, aggressive late!'
+            },
+            andar_bahar: {
+                name: 'Andar Bahar 🎴',
+                tagline: 'India\'s Fastest Card Game!',
+                features: ['50/50 chance', 'Pure luck game', '30-second rounds'],
+                tip: 'Andar has slightly better odds (50.5%). Go with the flow!'
             }
         };
 
@@ -216,7 +246,7 @@ ${game.features.map(f => `• ${f}`).join('\n')}
 
 ${this.gameLink}
 
-#${gameType === 'dragon' ? 'DragonVsTiger' : gameType === 'aviator' ? 'Aviator' : gameType === 'slots' ? 'Slots' : gameType === 'chicken' ? 'ChickenRoad' : 'TeenPatti'} #WinBig #PlayAndWin`;
+#${gameType === 'dragon' ? 'DragonVsTiger' : gameType === 'aviator' ? 'Aviator' : gameType === 'slots' ? 'Slots' : gameType === 'chicken' ? 'ChickenRoad' : gameType === 'teenpatti' ? 'TeenPatti' : gameType === 'roulette' ? 'Roulette' : gameType === 'blackjack' ? 'Blackjack' : gameType === 'baccarat' ? 'Baccarat' : gameType === 'poker' ? 'Poker' : 'AndarBahar'} #WinBig #PlayAndWin`;
     }
 
     // 频道：用户见证
@@ -366,6 +396,36 @@ See you all tomorrow 👋`;
                 vibe: 'Bluffing your way through is an art form',
                 tip: 'Reading the table is everything. Watch more, play smart.',
                 ask: 'Who\'s got the best poker face here? 🃏'
+            },
+            roulette: {
+                hook: 'Just tried Roulette for the first time...',
+                vibe: 'Watching that wheel spin is hypnotic tbh',
+                tip: 'Started with Red/Black bets. Safe and steady.',
+                ask: 'Any roulette pros here? Inside or outside bets?'
+            },
+            blackjack: {
+                hook: 'Blackjack is where it\'s at honestly',
+                vibe: '21 is the magic number. Love the strategy.',
+                tip: 'Memorized basic strategy. Dealer busts = profit!',
+                ask: 'Do you guys hit on 16 or stand? Always debating this!'
+            },
+            baccarat: {
+                hook: 'Baccarat is so underrated',
+                vibe: 'Super simple but the stakes can get HIGH',
+                tip: 'Banker bet all day. Low house edge = smart play.',
+                ask: 'Player or Banker? What\'s your go-to?'
+            },
+            poker: {
+                hook: 'Finally joined a Texas Hold\'em table...',
+                vibe: 'The mind games are next level 😅',
+                tip: 'Playing tight aggressive. Position is everything!',
+                ask: 'Any poker sharks here? What\'s your best hand?'
+            },
+            andar_bahar: {
+                hook: 'Andar Bahar is my new obsession',
+                vibe: '50/50 chance but the tension is REAL',
+                tip: 'Andar has slightly better odds. Math don\'t lie!',
+                ask: 'Andar or Bahar? Pure luck or pattern spotting?'
             }
         };
 
