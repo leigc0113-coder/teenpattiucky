@@ -1508,7 +1508,13 @@ async function processApproval(adminId, chatId, rechargeId, amount, messageId) {
             throw new Error(`User not found for userId: ${recharge.userId}`);
         }
         
-        console.log(`[APPROVE] Found user: id=${user.id}, telegramId=${user.telegramId}, gameId=${user.gameId}`);
+        console.log(`[APPROVE] Found user: id=${user.id}, telegramId=${user.telegramId}, user.gameId=${user.gameId}`);
+        console.log(`[APPROVE] Recharge record gameId: ${recharge.gameId}`);
+        
+        // 检查 gameId 是否一致
+        if (recharge.gameId && recharge.gameId !== user.gameId) {
+            console.warn(`[APPROVE] WARNING: GameId mismatch! Recharge: ${recharge.gameId}, User: ${user.gameId}`);
+        }
 
         // 生成号码 - 使用 user.id 而不是 recharge.userId，确保格式一致
         console.log(`[APPROVE] Generating numbers: user=${user.id}, amount=${amount}`);
