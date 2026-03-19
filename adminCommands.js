@@ -57,7 +57,28 @@ class AdminCommands {
             await this.showPendingList(chatId);
         });
 
-        // /stats - 今日统计
+        // /cleanup - 清理重复用户
+        this.bot.onText(/\/cleanup/, async (msg) => {
+            const chatId = msg.chat.id;
+            const userId = msg.from.id;
+
+            if (!this.isAdmin(userId)) return;
+
+            await this.cleanupDuplicateUsers(chatId);
+        });
+
+        // /cleanup_user [telegramId] [keepGameId] - 执行清理
+        this.bot.onText(/\/cleanup_user\s+(\d+)\s*(\S*)/, async (msg, match) => {
+            const chatId = msg.chat.id;
+            const userId = msg.from.id;
+
+            if (!this.isAdmin(userId)) return;
+
+            const telegramId = match[1];
+            const keepGameId = match[2] || null;
+            
+            await this.executeCleanup(chatId, telegramId, keepGameId);
+        });
         this.bot.onText(/\/stats/, async (msg) => {
             const chatId = msg.chat.id;
             const userId = msg.from.id;
@@ -886,6 +907,112 @@ class AdminCommands {
             }
         } catch (e) {
             // Ignore
+        }
+    }
+
+    // ==================== 清理重复用户 ====================
+    async cleanupDuplicateUsers(chatId) {
+        await this.bot.sendMessage(chatId, '⏳ 正在检查重复用户...');
+        
+        try {
+            const allUsers = await Database.getAll('users');
+            const telegramIdMap = new Map();
+
+            // 按 telegramId 分组
+            for (const user of allUsers) {
+                const tid = user.telegramId;
+                if (tid === 0) continue; // 跳过手动添加的用户
+                if (!telegramIdMap.has(tid)) {
+                    telegramIdMap.set(tid, []);
+                }
+                telegramIdMap.get(tid).push(user);
+            }
+
+            // 找出有多个记录的用户
+            const duplicates = [];
+            for (const [tid, users] of telegramIdMap) {
+                if (users.length > 1) {
+                    duplicates.push({ telegramId: tid, users });
+                }
+            }
+
+            if (duplicates.length === 0) {
+                await this.bot.sendMessage(chatId, '✅ 没有发现重复用户！');
+                return;
+            }
+
+            let report = '🧹 *重复用户清理报告*\n\n';
+            report += `发现 ${duplicates.length} 个用户有重复账号:\n\n`;
+
+            for (const dup of duplicates) {
+                report += `*Telegram ID: ${dup.telegramId}*\n`;
+                dup.users.forEach((u, i) => {
+                    report += `  ${i + 1}. ${u.gameId} (ID: ${u.id})\n`;
+                });
+                report += '\n';
+            }
+
+            report += '\n⚠️ 请回复要清理的用户ID和要保留的gameId\n';
+            report += '格式: `/cleanup_user [telegramId] [keepGameId]`\n';
+            report += '例如: `/cleanup_user 7054117110 2245425`\n\n';
+            report += '或直接回复 *确认清理* 自动保留最早创建的账号';
+
+            // 保存状态供后续使用
+            this.adminState.set(chatId, { 
+                step: 'cleanup_confirm', 
+                duplicates: duplicates 
+            });
+
+            await this.bot.sendMessage(chatId, report, { parse_mode: 'Markdown' });
+
+        } catch (error) {
+            console.error('[CLEANUP] Error:', error);
+            await this.bot.sendMessage(chatId, '❌ 检查失败: ' + error.message);
+        }
+    }
+
+    async executeCleanup(chatId, telegramId, keepGameId = null) {
+        try {
+            const users = await Database.findAll('users', { telegramId: parseInt(telegramId) });
+            
+            if (users.length <= 1) {
+                await this.bot.sendMessage(chatId, '✅ 该用户只有一个账号，无需清理');
+                return;
+            }
+
+            let keepUser;
+            if (keepGameId) {
+                keepUser = users.find(u => u.gameId === keepGameId);
+            }
+            if (!keepUser) {
+                // 保留最早创建的
+                keepUser = users.sort((a, b) => 
+                    new Date(a.createdAt) - new Date(b.createdAt)
+                )[0];
+            }
+
+            let report = `🧹 清理用户 ${telegramId}\n\n`;
+            report += `✅ 保留: ${keepUser.gameId}\n\n`;
+            report += `删除的账号:\n`;
+
+            for (const user of users) {
+                if (user.id !== keepUser.id) {
+                    report += `  ❌ ${user.gameId}\n`;
+                    
+                    // 删除等级身份
+                    await Database.deleteMany('tierIdentities', { userId: user.id });
+                    
+                    // 删除用户
+                    await Database.deleteOne('users', { id: user.id });
+                }
+            }
+
+            report += '\n✅ 清理完成！';
+            await this.bot.sendMessage(chatId, report);
+
+        } catch (error) {
+            console.error('[CLEANUP] Error:', error);
+            await this.bot.sendMessage(chatId, '❌ 清理失败: ' + error.message);
         }
     }
 }
