@@ -16,9 +16,9 @@ const axios = require('axios');
 class AIContentGenerator {
     constructor(config = {}) {
         this.apiKey = config.KIMI_API_KEY || process.env.KIMI_API_KEY;
-        // Moonshot 官方 API 端点
-        this.apiUrl = config.KIMI_API_URL || process.env.KIMI_API_URL || 'https://api.moonshot.cn/v1/chat/completions';
-        this.model = config.KIMI_MODEL || process.env.KIMI_MODEL || 'moonshot-v1-8k';
+        // Kimi Code API 端点 (OpenAI 兼容格式)
+        this.apiUrl = config.KIMI_API_URL || process.env.KIMI_API_URL || 'https://api.kimi.com/coding/v1/chat/completions';
+        this.model = config.KIMI_MODEL || process.env.KIMI_MODEL || 'kimi-for-coding';
         this.botName = config.BOT_NAME || 'TeenPatti Lucky Bot';
         this.appName = config.APP_NAME || 'TeenPatti Master';
         this.gameLink = config.GAME_LINK || 'https://t.me/yourbot';
