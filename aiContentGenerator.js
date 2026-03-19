@@ -1,60 +1,77 @@
 /**
  * ============================================================
- * AI 内容生成器 - Kimi API 集成版
+ * AI 内容生成器 - 多提供商支持版
  * ============================================================
  * 
+ * 支持的 AI 提供商（按优先级）：
+ * 1. Kimi API (Moonshot)
+ * 2. OpenRouter (免费替代)
+ * 3. 模板降级
+ * 
  * 功能：
- * - 接入 Kimi API 智能生成内容
- * - 支持 Kimi Code 平台 API (https://www.kimi.com/code)
+ * - 智能生成内容
  * - 双风格输出（频道广告风 / 群组社区风）
  * - 实时数据融合（奖池、参与人数等）
  * - 支持多种帖子类型
  */
 
 const axios = require('axios');
+const OpenRouterGenerator = require('./openRouterGenerator');
 
 class AIContentGenerator {
     constructor(config = {}) {
-        this.apiKey = config.KIMI_API_KEY || process.env.KIMI_API_KEY;
-        // Kimi Code API 端点 (OpenAI 兼容格式)
-        this.apiUrl = config.KIMI_API_URL || process.env.KIMI_API_URL || 'https://api.kimi.com/coding/v1/chat/completions';
-        this.model = config.KIMI_MODEL || process.env.KIMI_MODEL || 'kimi-for-coding';
-        this.botName = config.BOT_NAME || 'TeenPatti Lucky Bot';
-        this.appName = config.APP_NAME || 'TeenPatti Master';
-        this.gameLink = config.GAME_LINK || 'https://t.me/yourbot';
+        this.config = {
+            BOT_NAME: config.BOT_NAME || 'TeenPatti Lucky Bot',
+            APP_NAME: config.APP_NAME || 'TeenPatti Master',
+            GAME_LINK: config.GAME_LINK || 'https://t.me/yourbot',
+            ...config
+        };
         
-        if (!this.apiKey) {
-            console.warn('[AIContentGenerator] WARNING: KIMI_API_KEY not configured, falling back to template mode');
-        } else {
-            console.log('[AIContentGenerator] Kimi API URL:', this.apiUrl);
-            console.log('[AIContentGenerator] Kimi Model:', this.model);
-        }
+        // 初始化 Kimi
+        this.kimiApiKey = config.KIMI_API_KEY || process.env.KIMI_API_KEY;
+        this.kimiApiUrl = config.KIMI_API_URL || process.env.KIMI_API_URL || 'https://api.kimi.com/coding/v1/chat/completions';
+        this.kimiModel = config.KIMI_MODEL || process.env.KIMI_MODEL || 'kimi-for-coding';
+        
+        // 初始化 OpenRouter（备选）
+        this.openRouter = new OpenRouterGenerator(config);
+        
+        console.log('[AIContentGenerator] AI Providers:');
+        console.log('  - Kimi:', this.kimiApiKey ? '✅ Configured' : '❌ Not configured');
+        console.log('  - OpenRouter:', this.openRouter.isAvailable() ? '✅ Configured' : '❌ Not configured');
     }
 
-    // 检查是否可用
+    // 检查是否可用（任一提供商）
     isAvailable() {
-        return !!this.apiKey;
+        return !!this.kimiApiKey || this.openRouter.isAvailable();
     }
 
-    // 主生成接口
+    // 主生成接口 - 自动选择最佳提供商
     async generate(type, target, data = {}) {
-        if (!this.isAvailable()) {
-            console.log('[AIContentGenerator] Kimi API not available, using fallback template');
-            return this.fallbackGenerate(type, target, data);
-        }
-
-        try {
-            const prompt = this.buildPrompt(type, target, data);
-            const content = await this.callKimiAPI(prompt);
-            return content;
-        } catch (error) {
-            console.error('[AIContentGenerator] Kimi API error:', error.message);
-            if (error.response) {
-                console.error('[AIContentGenerator] Response status:', error.response.status);
-                console.error('[AIContentGenerator] Response data:', JSON.stringify(error.response.data));
+        // 尝试 1: Kimi API
+        if (this.kimiApiKey) {
+            try {
+                console.log('[AIContentGenerator] Trying Kimi API...');
+                const content = await this.callKimiAPI(type, target, data);
+                if (content) return content;
+            } catch (error) {
+                console.error('[AIContentGenerator] Kimi API failed:', error.message);
             }
-            return this.fallbackGenerate(type, target, data);
         }
+        
+        // 尝试 2: OpenRouter
+        if (this.openRouter.isAvailable()) {
+            try {
+                console.log('[AIContentGenerator] Trying OpenRouter API...');
+                const content = await this.openRouter.generate(type, target, data);
+                if (content) return content;
+            } catch (error) {
+                console.error('[AIContentGenerator] OpenRouter failed:', error.message);
+            }
+        }
+        
+        // 降级到模板
+        console.log('[AIContentGenerator] All AI providers failed, using template fallback');
+        return this.fallbackGenerate(type, target, data);
     }
 
     // 构建提示词
@@ -156,9 +173,11 @@ ${typeInstructions}
     }
 
     // 调用 Kimi API
-    async callKimiAPI(prompt) {
+    async callKimiAPI(type, target, data) {
+        const prompt = this.buildPrompt(type, target, data);
+        
         const requestBody = {
-            model: this.model,
+            model: this.kimiModel,
             messages: [
                 {
                     role: 'system',
@@ -176,11 +195,11 @@ ${typeInstructions}
         console.log('[AIContentGenerator] Calling Kimi API...');
         
         const response = await axios.post(
-            this.apiUrl,
+            this.kimiApiUrl,
             requestBody,
             {
                 headers: {
-                    'Authorization': `Bearer ${this.apiKey}`,
+                    'Authorization': `Bearer ${this.kimiApiKey}`,
                     'Content-Type': 'application/json'
                 },
                 timeout: 30000
