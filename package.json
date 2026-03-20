@@ -1,7 +1,7 @@
 {
   "name": "teenpatti-lucky-bot",
-  "version": "1.1.0",
-  "description": "游戏号码抽奖平台 - Telegram Bot (Fixed & Enhanced)",
+  "version": "1.1.1",
+  "description": "游戏号码抽奖平台 - Telegram Bot (Fixed & Enhanced) [IST Time Fix Deploy Test]",
   "main": "bot.js",
   "scripts": {
     "start": "node bot.js",
