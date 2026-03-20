@@ -12,6 +12,7 @@
 const Database = require('./database');
 const NumberTierService = require('./numberTierService');
 const CONFIG = require('./config');
+const TimeUtil = require('./timeUtil');
 
 class RechargeService {
     
@@ -159,15 +160,8 @@ class RechargeService {
      * 获取用户今日已审核金额
      */
     async getTodayApprovedAmount(userId) {
-        // 使用 IST 时区获取今天的日期
-        const istString = new Date().toLocaleString('en-US', { 
-            timeZone: 'Asia/Kolkata',
-            year: 'numeric',
-            month: '2-digit',
-            day: '2-digit'
-        });
-        const [month, day, year] = istString.split('/');
-        const today = `${year}-${month}-${day}`;
+        // 使用 TimeUtil 获取 IST 今天日期
+        const today = TimeUtil.getTodayIST();
         
         console.log(`[RECHARGE] getTodayApprovedAmount: userId=${userId}, today=${today}`);
         

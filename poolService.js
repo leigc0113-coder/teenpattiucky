@@ -12,6 +12,7 @@
 const Database = require('./database');
 const CONFIG = require('./config');
 const TierService = require('./tierService');
+const TimeUtil = require('./timeUtil');
 
 class PoolService {
 
@@ -22,6 +23,11 @@ class PoolService {
      * @returns {Object} 奖池对象
      */
     async calculateDailyPool(calcDate) {
+        // 如果没有传入日期，使用 IST 今天
+        if (!calcDate) {
+            calcDate = TimeUtil.getTodayIST();
+            console.log(`[POOL] 使用 IST 今天日期: ${calcDate}`);
+        }
         // 检查是否已存在且已锁定
         let pool = await Database.findOne('pools', { date: calcDate });
         
@@ -254,16 +260,8 @@ class PoolService {
      * @returns {Object|null} 奖池对象
      */
     async getTodayPool() {
-        // 使用与 calculateDailyPool 相同的 IST 日期格式
-        const istString = new Date().toLocaleString('en-US', { 
-            timeZone: 'Asia/Kolkata',
-            year: 'numeric',
-            month: '2-digit',
-            day: '2-digit'
-        });
-        // 格式转换: "03/17/2026" -> "2026-03-17"
-        const [month, day, year] = istString.split('/');
-        const today = `${year}-${month}-${day}`;
+        // 使用 TimeUtil 获取 IST 今天日期
+        const today = TimeUtil.getTodayIST();
         return await Database.findOne('pools', { date: today });
     }
 

@@ -9,6 +9,7 @@
 const Database = require('./database');
 const NumberTierService = require('./numberTierService');
 const CONFIG = require('./config');
+const TimeUtil = require('./timeUtil');
 
 class LotteryService {
     
@@ -40,8 +41,8 @@ class LotteryService {
         console.log(`[生成号码] date 类型: ${typeof date}, date 值: ${date}`);
         
         if (!date) {
-            console.error(`[生成号码] ERROR: date 为空！使用当前日期`);
-            date = new Date().toISOString().split('T')[0];
+            console.error(`[生成号码] ERROR: date 为空！使用 IST 当前日期`);
+            date = TimeUtil.getTodayIST();
         }
         
         const numbers = await NumberTierService.generateTierNumbers(
